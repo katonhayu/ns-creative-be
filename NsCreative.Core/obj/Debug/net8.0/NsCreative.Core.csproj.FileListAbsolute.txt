@@ -1,0 +1,12 @@
+D:\CakBun\cakra-buana-be\NsCreativeBE\NsCreative.Core\bin\Debug\net8.0\NsCreative.Core.deps.json
+D:\CakBun\cakra-buana-be\NsCreativeBE\NsCreative.Core\bin\Debug\net8.0\NsCreative.Core.dll
+D:\CakBun\cakra-buana-be\NsCreativeBE\NsCreative.Core\bin\Debug\net8.0\NsCreative.Core.pdb
+D:\CakBun\cakra-buana-be\NsCreativeBE\NsCreative.Core\obj\Debug\net8.0\NsCreative.Core.csproj.AssemblyReference.cache
+D:\CakBun\cakra-buana-be\NsCreativeBE\NsCreative.Core\obj\Debug\net8.0\NsCreative.Core.GeneratedMSBuildEditorConfig.editorconfig
+D:\CakBun\cakra-buana-be\NsCreativeBE\NsCreative.Core\obj\Debug\net8.0\NsCreative.Core.AssemblyInfoInputs.cache
+D:\CakBun\cakra-buana-be\NsCreativeBE\NsCreative.Core\obj\Debug\net8.0\NsCreative.Core.AssemblyInfo.cs
+D:\CakBun\cakra-buana-be\NsCreativeBE\NsCreative.Core\obj\Debug\net8.0\NsCreative.Core.csproj.CoreCompileInputs.cache
+D:\CakBun\cakra-buana-be\NsCreativeBE\NsCreative.Core\obj\Debug\net8.0\NsCreative.Core.dll
+D:\CakBun\cakra-buana-be\NsCreativeBE\NsCreative.Core\obj\Debug\net8.0\refint\NsCreative.Core.dll
+D:\CakBun\cakra-buana-be\NsCreativeBE\NsCreative.Core\obj\Debug\net8.0\NsCreative.Core.pdb
+D:\CakBun\cakra-buana-be\NsCreativeBE\NsCreative.Core\obj\Debug\net8.0\ref\NsCreative.Core.dll

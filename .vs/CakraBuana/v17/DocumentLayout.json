@@ -1,0 +1,154 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\CakBun\\cakra-buana-be\\CakraBuanaBE\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{A11B09C3-95AF-4E15-A0A4-2673DF77BB52}|CakraBuana.Api\\CakraBuana.Api.csproj|d:\\cakbun\\cakra-buana-be\\cakrabuanabe\\cakrabuana.api\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A11B09C3-95AF-4E15-A0A4-2673DF77BB52}|CakraBuana.Api\\CakraBuana.Api.csproj|solutionrelative:cakrabuana.api\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A11B09C3-95AF-4E15-A0A4-2673DF77BB52}|CakraBuana.Api\\CakraBuana.Api.csproj|d:\\cakbun\\cakra-buana-be\\cakrabuanabe\\cakrabuana.api\\controllers\\taskscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A11B09C3-95AF-4E15-A0A4-2673DF77BB52}|CakraBuana.Api\\CakraBuana.Api.csproj|solutionrelative:cakrabuana.api\\controllers\\taskscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A11B09C3-95AF-4E15-A0A4-2673DF77BB52}|CakraBuana.Api\\CakraBuana.Api.csproj|d:\\cakbun\\cakra-buana-be\\cakrabuanabe\\cakrabuana.api\\auth\\penggunasaatini.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A11B09C3-95AF-4E15-A0A4-2673DF77BB52}|CakraBuana.Api\\CakraBuana.Api.csproj|solutionrelative:cakrabuana.api\\auth\\penggunasaatini.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A11B09C3-95AF-4E15-A0A4-2673DF77BB52}|CakraBuana.Api\\CakraBuana.Api.csproj|d:\\cakbun\\cakra-buana-be\\cakrabuanabe\\cakrabuana.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A11B09C3-95AF-4E15-A0A4-2673DF77BB52}|CakraBuana.Api\\CakraBuana.Api.csproj|solutionrelative:cakrabuana.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C93AF38A-0A08-4E4F-8EA1-66E37602C834}|CakraBuana.Data\\CakraBuana.Data.csproj|d:\\cakbun\\cakra-buana-be\\cakrabuanabe\\cakrabuana.data\\configurations\\budgetconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C93AF38A-0A08-4E4F-8EA1-66E37602C834}|CakraBuana.Data\\CakraBuana.Data.csproj|solutionrelative:cakrabuana.data\\configurations\\budgetconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A11B09C3-95AF-4E15-A0A4-2673DF77BB52}|CakraBuana.Api\\CakraBuana.Api.csproj|d:\\cakbun\\cakra-buana-be\\cakrabuanabe\\cakrabuana.api\\controllers\\clientscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A11B09C3-95AF-4E15-A0A4-2673DF77BB52}|CakraBuana.Api\\CakraBuana.Api.csproj|solutionrelative:cakrabuana.api\\controllers\\clientscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A11B09C3-95AF-4E15-A0A4-2673DF77BB52}|CakraBuana.Api\\CakraBuana.Api.csproj|d:\\cakbun\\cakra-buana-be\\cakrabuanabe\\cakrabuana.api\\middleware\\exceptionhandlingmiddleware.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A11B09C3-95AF-4E15-A0A4-2673DF77BB52}|CakraBuana.Api\\CakraBuana.Api.csproj|solutionrelative:cakrabuana.api\\middleware\\exceptionhandlingmiddleware.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A11B09C3-95AF-4E15-A0A4-2673DF77BB52}|CakraBuana.Api\\CakraBuana.Api.csproj|d:\\cakbun\\cakra-buana-be\\cakrabuanabe\\cakrabuana.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{A11B09C3-95AF-4E15-A0A4-2673DF77BB52}|CakraBuana.Api\\CakraBuana.Api.csproj|solutionrelative:cakrabuana.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 4,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "Program.cs",
+              "DocumentMoniker": "D:\\CakBun\\cakra-buana-be\\CakraBuanaBE\\CakraBuana.Api\\Program.cs",
+              "RelativeDocumentMoniker": "CakraBuana.Api\\Program.cs",
+              "ToolTip": "D:\\CakBun\\cakra-buana-be\\CakraBuanaBE\\CakraBuana.Api\\Program.cs",
+              "RelativeToolTip": "CakraBuana.Api\\Program.cs",
+              "ViewState": "AgIAACoAAAAAAAAAAAAQwDwAAAA8AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-26T11:57:01.118Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "PenggunaSaatIni.cs",
+              "DocumentMoniker": "D:\\CakBun\\cakra-buana-be\\CakraBuanaBE\\CakraBuana.Api\\Auth\\PenggunaSaatIni.cs",
+              "RelativeDocumentMoniker": "CakraBuana.Api\\Auth\\PenggunaSaatIni.cs",
+              "ToolTip": "D:\\CakBun\\cakra-buana-be\\CakraBuanaBE\\CakraBuana.Api\\Auth\\PenggunaSaatIni.cs",
+              "RelativeToolTip": "CakraBuana.Api\\Auth\\PenggunaSaatIni.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-26T11:53:57.375Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "TasksController.cs",
+              "DocumentMoniker": "D:\\CakBun\\cakra-buana-be\\CakraBuanaBE\\CakraBuana.Api\\Controllers\\TasksController.cs",
+              "RelativeDocumentMoniker": "CakraBuana.Api\\Controllers\\TasksController.cs",
+              "ToolTip": "D:\\CakBun\\cakra-buana-be\\CakraBuanaBE\\CakraBuana.Api\\Controllers\\TasksController.cs",
+              "RelativeToolTip": "CakraBuana.Api\\Controllers\\TasksController.cs",
+              "ViewState": "AgIAACcAAAAAAAAAAAAYwDkAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-26T11:50:49.616Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "AuthController.cs",
+              "DocumentMoniker": "D:\\CakBun\\cakra-buana-be\\CakraBuanaBE\\CakraBuana.Api\\Controllers\\AuthController.cs",
+              "RelativeDocumentMoniker": "CakraBuana.Api\\Controllers\\AuthController.cs",
+              "ToolTip": "D:\\CakBun\\cakra-buana-be\\CakraBuanaBE\\CakraBuana.Api\\Controllers\\AuthController.cs",
+              "RelativeToolTip": "CakraBuana.Api\\Controllers\\AuthController.cs",
+              "ViewState": "AgIAAAkAAAAAAAAAAAAAABEAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-26T11:45:50.997Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "BudgetConfiguration.cs",
+              "DocumentMoniker": "D:\\CakBun\\cakra-buana-be\\CakraBuanaBE\\CakraBuana.Data\\Configurations\\BudgetConfiguration.cs",
+              "RelativeDocumentMoniker": "CakraBuana.Data\\Configurations\\BudgetConfiguration.cs",
+              "ToolTip": "D:\\CakBun\\cakra-buana-be\\CakraBuanaBE\\CakraBuana.Data\\Configurations\\BudgetConfiguration.cs",
+              "RelativeToolTip": "CakraBuana.Data\\Configurations\\BudgetConfiguration.cs",
+              "ViewState": "AgIAABAAAAAAAAAAAAAQwDAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-26T08:30:36.741Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "ClientsController.cs",
+              "DocumentMoniker": "D:\\CakBun\\cakra-buana-be\\CakraBuanaBE\\CakraBuana.Api\\Controllers\\ClientsController.cs",
+              "RelativeDocumentMoniker": "CakraBuana.Api\\Controllers\\ClientsController.cs",
+              "ToolTip": "D:\\CakBun\\cakra-buana-be\\CakraBuanaBE\\CakraBuana.Api\\Controllers\\ClientsController.cs",
+              "RelativeToolTip": "CakraBuana.Api\\Controllers\\ClientsController.cs",
+              "ViewState": "AgIAADgAAAAAAAAAAAA9wBsAAAAnAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-26T08:29:07.856Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "ExceptionHandlingMiddleware.cs",
+              "DocumentMoniker": "D:\\CakBun\\cakra-buana-be\\CakraBuanaBE\\CakraBuana.Api\\Middleware\\ExceptionHandlingMiddleware.cs",
+              "RelativeDocumentMoniker": "CakraBuana.Api\\Middleware\\ExceptionHandlingMiddleware.cs",
+              "ToolTip": "D:\\CakBun\\cakra-buana-be\\CakraBuanaBE\\CakraBuana.Api\\Middleware\\ExceptionHandlingMiddleware.cs",
+              "RelativeToolTip": "CakraBuana.Api\\Middleware\\ExceptionHandlingMiddleware.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-26T08:29:03.392Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "D:\\CakBun\\cakra-buana-be\\CakraBuanaBE\\CakraBuana.Api\\appsettings.json",
+              "RelativeDocumentMoniker": "CakraBuana.Api\\appsettings.json",
+              "ToolTip": "D:\\CakBun\\cakra-buana-be\\CakraBuanaBE\\CakraBuana.Api\\appsettings.json",
+              "RelativeToolTip": "CakraBuana.Api\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACEAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-09-26T06:51:41.902Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

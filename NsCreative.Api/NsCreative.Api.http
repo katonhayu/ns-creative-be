@@ -1,0 +1,51 @@
+@NsCreativeApi_HostAddress = http://localhost:5274
+@clientId = 22222222-0000-0000-0000-000000000001
+
+### Daftar client (halaman 1, cari "bank", urut perusahaan menurun)
+GET {{NsCreativeApi_HostAddress}}/api/clients?page=1&pageSize=20&search=bank&sortBy=perusahaan&sortDir=desc
+Accept: application/json
+
+### Dropdown client
+GET {{NsCreativeApi_HostAddress}}/api/clients/lookup?search=an
+Accept: application/json
+
+### Detail client
+GET {{NsCreativeApi_HostAddress}}/api/clients/{{clientId}}
+Accept: application/json
+
+### Riwayat event client
+GET {{NsCreativeApi_HostAddress}}/api/clients/{{clientId}}/events
+Accept: application/json
+
+### Tambah client
+POST {{NsCreativeApi_HostAddress}}/api/clients
+Content-Type: application/json
+
+{
+  "nama": "Hendra Gunawan",
+  "perusahaan": "PT Karya Mandiri Sejahtera",
+  "telepon": "0821-4455-6677",
+  "email": "hendra@karyamandiri.id",
+  "alamat": "Kawasan Industri Jababeka Blok C-7, Cikarang"
+}
+
+### Validasi gagal (400)
+POST {{NsCreativeApi_HostAddress}}/api/clients
+Content-Type: application/json
+
+{ "nama": "", "telepon": "12345", "email": "salah@" }
+
+### Ubah client
+PUT {{NsCreativeApi_HostAddress}}/api/clients/{{clientId}}
+Content-Type: application/json
+
+{
+  "nama": "Andi Wijaya",
+  "perusahaan": "PT Nusantara Digital Solusi",
+  "telepon": "0812-2233-4455",
+  "email": "andi.wijaya@nusantaradigital.co.id",
+  "alamat": "Jl. Asia Afrika No. 90, Bandung"
+}
+
+### Hapus client yang masih punya event aktif (422)
+DELETE {{NsCreativeApi_HostAddress}}/api/clients/{{clientId}}
