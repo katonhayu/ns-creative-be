@@ -12,7 +12,7 @@ namespace NsCreative.Api.Controllers;
 /// Semua perubahan ditolak 422 jika event sudah selesai atau dibatalkan.
 /// </summary>
 [ApiController]
-[Authorize(Roles = Peran.AdminPic)]
+[Authorize(Roles = Peran.Semua)]
 [Route("api/events/{eventId:guid}/budgets")]
 [Produces("application/json")]
 public class BudgetsController(IBudgetService budgets) : ControllerBase
@@ -44,6 +44,7 @@ public class BudgetsController(IBudgetService budgets) : ControllerBase
         Ok(await budgets.GetByIdAsync(eventId, id, ct));
 
     /// <summary>Tambah pos manual. Pos talent/vendor dibuat otomatis lewat penugasan, bukan di sini.</summary>
+    [Authorize(Roles = Peran.Pengelola)]
     [HttpPost]
     [ProducesResponseType<BudgetDto>(StatusCodes.Status201Created)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -56,6 +57,7 @@ public class BudgetsController(IBudgetService budgets) : ControllerBase
     }
 
     /// <summary>Ubah pos manual. Ditolak 422 untuk pos terkunci.</summary>
+    [Authorize(Roles = Peran.Pengelola)]
     [HttpPut("{id:guid}")]
     [ProducesResponseType<BudgetDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -66,6 +68,7 @@ public class BudgetsController(IBudgetService budgets) : ControllerBase
 
     /// <summary>⚡ Catat realisasi (biaya aktual, status pembayaran, sponsorship opsional). Boleh untuk semua pos.</summary>
     /// <remarks>Untuk pos dari vendor, status pembayaran di transaksi vendor ikut diubah.</remarks>
+    [Authorize(Roles = Peran.Pengelola)]
     [HttpPatch("{id:guid}/realisasi")]
     [ProducesResponseType<BudgetDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -76,6 +79,7 @@ public class BudgetsController(IBudgetService budgets) : ControllerBase
         Ok(await budgets.UpdateRealisasiAsync(eventId, id, dto, ct));
 
     /// <summary>Hapus pos manual. Ditolak 422 untuk pos terkunci.</summary>
+    [Authorize(Roles = Peran.Pengelola)]
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]

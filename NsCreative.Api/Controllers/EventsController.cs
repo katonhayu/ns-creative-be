@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace NsCreative.Api.Controllers;
 
 /// <summary>Event, pusat data transaksional. Error ditangani ExceptionHandlingMiddleware.</summary>
-/// <remarks>Difilter otomatis per peran: pic hanya event miliknya, crew hanya event tempat ia bertugas.</remarks>
+/// <remarks>Difilter otomatis per peran: crew hanya melihat event yang ia pegang (PIC) atau tempat ia ditugaskan. Hanya admin dan crew PIC yang bisa mengubah event.</remarks>
 [ApiController]
 [Authorize]
 [Route("api/events")]
@@ -19,7 +19,7 @@ public class EventsController(IEventService events) : ControllerBase
     /// <summary>Daftar event berpaginasi. Pencarian pada nama, jenis, lokasi, dan client.</summary>
     /// <remarks>
     /// sortBy: tanggalMulai (default), nama, status (urut alur status), createdAt.
-    /// Filter: status, clientId, picUserId, dariTanggal, sampaiTanggal (event yang beririsan dengan rentang ikut tampil).
+    /// Filter: status, clientId, picCrewId, dariTanggal, sampaiTanggal (event yang beririsan dengan rentang ikut tampil).
     /// </remarks>
     [Authorize(Roles = Peran.Semua)]
     [HttpGet]
@@ -29,7 +29,7 @@ public class EventsController(IEventService events) : ControllerBase
         Ok(await events.GetListAsync(query, filter, ct));
 
     /// <summary>Pilihan event untuk dropdown (maksimal 50, terbaru lebih dulu).</summary>
-    [Authorize(Roles = Peran.AdminPic)]
+    [Authorize(Roles = Peran.Semua)]
     [HttpGet("lookup")]
     [ProducesResponseType<IReadOnlyList<EventLookupDto>>(StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<EventLookupDto>>> GetLookup(
@@ -45,7 +45,7 @@ public class EventsController(IEventService events) : ControllerBase
         Ok(await events.GetByIdAsync(id, ct));
 
     /// <summary>Ringkasan tab Ringkasan: hitung mundur hari-H, progres task, budget, dan jumlah penugasan.</summary>
-    [Authorize(Roles = Peran.AdminPic)]
+    [Authorize(Roles = Peran.Semua)]
     [HttpGet("{id:guid}/summary")]
     [ProducesResponseType<EventSummaryDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
@@ -53,7 +53,7 @@ public class EventsController(IEventService events) : ControllerBase
         Ok(await events.GetSummaryAsync(id, ct));
 
     /// <summary>Buat event. Status awal otomatis <c>draft</c>.</summary>
-    [Authorize(Roles = Peran.AdminPic)]
+    [Authorize(Roles = Peran.Pengelola)]
     [HttpPost]
     [ProducesResponseType<EventDto>(StatusCodes.Status201Created)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -65,7 +65,7 @@ public class EventsController(IEventService events) : ControllerBase
     }
 
     /// <summary>Ubah data event. Status tidak bisa diubah lewat sini.</summary>
-    [Authorize(Roles = Peran.AdminPic)]
+    [Authorize(Roles = Peran.Pengelola)]
     [HttpPut("{id:guid}")]
     [ProducesResponseType<EventDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -79,7 +79,7 @@ public class EventsController(IEventService events) : ControllerBase
     /// draft → perencanaan/dibatalkan; perencanaan → dikonfirmasi/dibatalkan;
     /// dikonfirmasi → berlangsung/dibatalkan; berlangsung → selesai. Selesai dan dibatalkan adalah status akhir.
     /// </remarks>
-    [Authorize(Roles = Peran.AdminPic)]
+    [Authorize(Roles = Peran.Pengelola)]
     [HttpPatch("{id:guid}/status")]
     [ProducesResponseType<EventDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]

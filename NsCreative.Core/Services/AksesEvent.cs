@@ -7,79 +7,129 @@ using Microsoft.EntityFrameworkCore;
 namespace NsCreative.Core.Services;
 
 /// <param name="TanggalSelesai">Sama dengan tanggal mulai untuk event satu hari.</param>
-public sealed record InfoEvent(Guid Id, string Nama, EventStatus Status, DateOnly TanggalMulai, DateOnly TanggalSelesai);
+/// <param name="BolehKelola">Pengguna login boleh mengubah data event ini: admin, atau crew yang menjadi PIC-nya.</param>
+public sealed record InfoEvent(
+    Guid Id, string Nama, EventStatus Status, DateOnly TanggalMulai, DateOnly TanggalSelesai,
+    Guid PicCrewId, bool BolehKelola)
+{
+    /// <summary>Event selesai atau dibatalkan: penugasan, jadwal, task, dan budget tidak boleh diubah lagi.</summary>
+    public void CekBelumTerkunci()
+    {
+        if (Status.Terkunci())
+            throw new BusinessRuleException(
+                $"Event {Nama} sudah {Status.Label()}, sehingga datanya tidak bisa diubah lagi.");
+    }
+}
 
 /// <summary>
-/// Pemeriksaan event induk untuk semua endpoint di bawah <c>/api/events/{eventId}/...</c>:
-/// ada (404), boleh diakses pengguna login (403), dan belum terkunci (422).
-/// Peran per endpoint dicek [Authorize] di controller; di sini kepemilikan datanya.
+/// Pemeriksaan event induk untuk semua endpoint di bawah <c>/api/events/{eventId}/...</c>.
+/// <list type="bullet">
+/// <item>admin: lihat dan kelola semua event.</item>
+/// <item>event_manager: lihat semua event, tidak pernah mengubah.</item>
+/// <item>crew: kelola event yang PIC-nya crew miliknya; event lain tempat ia ditugaskan hanya dilihat.</item>
+/// </list>
+/// Peran per endpoint dicek [Authorize] di controller; di sini hubungan pengguna dengan event-nya.
 /// </summary>
 public interface IAksesEvent
 {
-    /// <summary>Untuk baca: event ada dan terlihat oleh pengguna login.</summary>
+    /// <summary>Untuk baca: event ada (404) dan terlihat oleh pengguna login (403).</summary>
     Task<InfoEvent> LihatAsync(Guid eventId, CancellationToken ct = default);
 
-    /// <summary>Untuk POST, PUT, PATCH, DELETE: seperti Lihat, dan event belum selesai/dibatalkan.</summary>
+    /// <summary>
+    /// Untuk perubahan yang tetap boleh walau event sudah selesai (data event, dokumen, laporan):
+    /// seperti Lihat, dan pengguna boleh mengelola event ini (403).
+    /// </summary>
+    Task<InfoEvent> KelolaAsync(Guid eventId, CancellationToken ct = default);
+
+    /// <summary>Untuk POST, PUT, PATCH, DELETE penugasan, jadwal, task, dan budget: Kelola, dan event belum terkunci (422).</summary>
     Task<InfoEvent> UbahAsync(Guid eventId, CancellationToken ct = default);
 
-    /// <summary>
-    /// Event yang terlihat: admin semua; pic hanya yang PIC-nya dirinya; crew hanya event tempat
-    /// ia ditugaskan, atau menjadi PIC task/sesi rundown di event itu.
-    /// </summary>
+    /// <summary>Event yang terlihat: admin dan event manager semua; crew event yang ia pegang atau tempat ia ditugaskan.</summary>
     IQueryable<Event> Terlihat(IQueryable<Event> events);
 
-    /// <summary>PIC jadwal atau task: akun yang ada dan aktif, peran apa pun (termasuk crew).</summary>
-    Task CekPenanggungJawabAsync(IEnumerable<Guid?> userIds, CancellationToken ct = default);
+    /// <summary>
+    /// PIC task atau sesi rundown harus crew yang terlibat di event: PIC event atau crew yang
+    /// ditugaskan di event itu.
+    /// </summary>
+    Task CekPenanggungJawabAsync(InfoEvent ev, IEnumerable<Guid?> crewIds, CancellationToken ct = default);
 }
 
 public class AksesEvent(IAppDbContext db, IPenggunaSaatIni pengguna) : IAksesEvent
 {
     public async Task<InfoEvent> LihatAsync(Guid eventId, CancellationToken ct = default)
     {
+        var saya = pengguna.Id;
+        var role = pengguna.Role;
         var ev = await db.Events.AsNoTracking()
+            .IgnoreQueryFilters()
             .Where(e => e.Id == eventId)
-            .Select(e => new InfoEvent(e.Id, e.Nama, e.Status, e.TanggalMulai, e.TanggalSelesai ?? e.TanggalMulai))
+            .Select(e => new
+            {
+                e.Id, e.Nama, e.Status, e.TanggalMulai, TanggalSelesai = e.TanggalSelesai ?? e.TanggalMulai,
+                e.PicCrewId,
+                SayaPic = e.PicCrew.UserId == saya,
+                SayaDitugaskan = e.Crews.Any(ec => ec.Crew.UserId == saya),
+            })
             .FirstOrDefaultAsync(ct)
             ?? throw new NotFoundException("Event tidak ditemukan.");
 
-        if (pengguna.Role != UserRole.Admin
-            && !await Terlihat(db.Events.IgnoreQueryFilters().Where(e => e.Id == eventId)).AnyAsync(ct))
-            throw new ForbiddenException(pengguna.Role == UserRole.Pic
-                ? "Anda bukan PIC event ini."
-                : "Anda tidak ditugaskan di event ini.");
+        var bolehKelola = role == UserRole.Admin || (role == UserRole.Crew && ev.SayaPic);
+        var bolehLihat = role is UserRole.Admin or UserRole.EventManager || ev.SayaPic || ev.SayaDitugaskan;
+        if (!bolehLihat)
+            throw new ForbiddenException("Anda tidak terlibat di event ini.");
+
+        return new InfoEvent(ev.Id, ev.Nama, ev.Status, ev.TanggalMulai, ev.TanggalSelesai, ev.PicCrewId, bolehKelola);
+    }
+
+    public async Task<InfoEvent> KelolaAsync(Guid eventId, CancellationToken ct = default)
+    {
+        var ev = await LihatAsync(eventId, ct);
+        if (!ev.BolehKelola)
+            throw new ForbiddenException(pengguna.Role == UserRole.EventManager
+                ? "Event manager hanya bisa melihat data, tidak bisa mengubahnya."
+                : "Hanya PIC event ini yang bisa mengubah datanya.");
         return ev;
     }
 
     public async Task<InfoEvent> UbahAsync(Guid eventId, CancellationToken ct = default)
     {
-        var ev = await LihatAsync(eventId, ct);
-        if (ev.Status.Terkunci())
-            throw new BusinessRuleException(
-                $"Event {ev.Nama} sudah {ev.Status.Label()}, sehingga datanya tidak bisa diubah lagi.");
+        var ev = await KelolaAsync(eventId, ct);
+        ev.CekBelumTerkunci();
         return ev;
     }
 
     public IQueryable<Event> Terlihat(IQueryable<Event> events)
     {
-        var id = pengguna.Id;
+        var saya = pengguna.Id;
         return pengguna.Role switch
         {
-            UserRole.Admin => events,
-            UserRole.Pic => events.Where(e => e.PicUserId == id),
-            _ => events.Where(e =>
-                db.EventCrews.Any(ec => ec.EventId == e.Id && ec.Crew.UserId == id)
-                || e.Tasks.Any(t => t.PicUserId == id)
-                || e.Schedules.Any(s => s.PicUserId == id)),
+            UserRole.Admin or UserRole.EventManager => events,
+            _ => events.Where(e => e.PicCrew.UserId == saya || e.Crews.Any(ec => ec.Crew.UserId == saya)),
         };
     }
 
-    public async Task CekPenanggungJawabAsync(IEnumerable<Guid?> userIds, CancellationToken ct = default)
+    public async Task CekPenanggungJawabAsync(InfoEvent ev, IEnumerable<Guid?> crewIds, CancellationToken ct = default)
     {
-        var ids = userIds.Where(id => id.HasValue).Select(id => id!.Value).Distinct().ToList();
+        var ids = crewIds.Where(id => id.HasValue).Select(id => id!.Value).Distinct().ToList();
         if (ids.Count == 0) return;
 
-        var jumlahAktif = await db.Users.CountAsync(u => ids.Contains(u.Id) && u.IsAktif, ct);
-        if (jumlahAktif < ids.Count)
-            throw new BusinessRuleException("PIC yang dipilih tidak ditemukan atau akunnya sedang nonaktif.");
+        var ditugaskan = await db.EventCrews.AsNoTracking()
+            .Where(ec => ec.EventId == ev.Id && ids.Contains(ec.CrewId))
+            .Select(ec => ec.CrewId)
+            .ToListAsync(ct);
+        var luar = ids.Where(id => id != ev.PicCrewId && !ditugaskan.Contains(id)).ToList();
+        if (luar.Count == 0) return;
+
+        var nama = await db.Crews.AsNoTracking()
+            .IgnoreQueryFilters()
+            .Where(c => luar.Contains(c.Id))
+            .OrderBy(c => c.Nama)
+            .Select(c => c.Nama)
+            .ToListAsync(ct);
+        if (nama.Count < luar.Count)
+            throw new BusinessRuleException("PIC yang dipilih tidak ditemukan.");
+        throw new BusinessRuleException(
+            $"{string.Join(", ", nama)} tidak terlibat di event ini. " +
+            "PIC hanya bisa dipilih dari PIC event atau crew yang ditugaskan di tab Crew.");
     }
 }

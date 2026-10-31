@@ -10,14 +10,14 @@ namespace NsCreative.Api.Controllers;
 
 /// <summary>Laporan evaluasi event. Satu laporan per event, hanya untuk event yang sudah selesai.</summary>
 [ApiController]
-[Authorize(Roles = Peran.AdminPic)]
+[Authorize(Roles = Peran.Semua)]
 [Route("api")]
 [Produces("application/json")]
 public class ReportsController(IReportService reports) : ControllerBase
 {
     /// <summary>Daftar semua laporan (khusus admin).</summary>
     /// <remarks>sortBy: tanggalDibuat (default, terbaru dulu), tanggalMulai, namaEvent, totalPengeluaran. Filter <c>tahun</c> = tahun tanggal mulai event.</remarks>
-    [Authorize(Roles = Peran.Admin)]
+    [Authorize(Roles = Peran.Pemantau)]
     [HttpGet("reports")]
     [ProducesResponseType<PagedResult<ReportListDto>>(StatusCodes.Status200OK)]
     public async Task<ActionResult<PagedResult<ReportListDto>>> GetList(
@@ -25,7 +25,7 @@ public class ReportsController(IReportService reports) : ControllerBase
         Ok(await reports.GetListAsync(query, tahun, ct));
 
     /// <summary>Event yang sudah selesai beserta laporannya (null jika belum dibuat). Tidak berpaginasi.</summary>
-    /// <remarks>Untuk halaman Laporan. Pic hanya melihat event miliknya. Filter <c>tahun</c> = tahun tanggal mulai event.</remarks>
+    /// <remarks>Untuk halaman Laporan. Crew hanya melihat event yang ia pegang atau tempat ia ditugaskan. Filter <c>tahun</c> = tahun tanggal mulai event.</remarks>
     [HttpGet("reports/events")]
     [ProducesResponseType<IReadOnlyList<LaporanEventDto>>(StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<LaporanEventDto>>> GetEventSelesai(
@@ -41,6 +41,7 @@ public class ReportsController(IReportService reports) : ControllerBase
 
     /// <summary>⚡ Generate laporan. Total pengeluaran = jumlah biaya aktual budget saat ini, lalu dibekukan.</summary>
     /// <remarks>Ditolak 422 jika status event belum selesai atau laporan sudah ada. Body opsional (isi naratif awal).</remarks>
+    [Authorize(Roles = Peran.Pengelola)]
     [HttpPost("events/{eventId:guid}/report")]
     [ProducesResponseType<ReportDto>(StatusCodes.Status201Created)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -56,6 +57,7 @@ public class ReportsController(IReportService reports) : ControllerBase
     }
 
     /// <summary>Ubah isi naratif. <c>totalPengeluaran</c> tidak bisa diubah.</summary>
+    [Authorize(Roles = Peran.Pengelola)]
     [HttpPut("events/{eventId:guid}/report")]
     [ProducesResponseType<ReportDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]

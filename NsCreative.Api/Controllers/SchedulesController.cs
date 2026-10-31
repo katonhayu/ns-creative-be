@@ -42,7 +42,7 @@ public class SchedulesController(IScheduleService schedules) : ControllerBase
     public async Task<ActionResult<ScheduleDto>> GetById(Guid eventId, Guid id, CancellationToken ct) =>
         Ok(await schedules.GetByIdAsync(eventId, id, ct));
 
-    [Authorize(Roles = Peran.AdminPic)]
+    [Authorize(Roles = Peran.Pengelola)]
     [HttpPost]
     [ProducesResponseType<ScheduleDto>(StatusCodes.Status201Created)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -56,7 +56,7 @@ public class SchedulesController(IScheduleService schedules) : ControllerBase
 
     /// <summary>⚡ Input rundown sekaligus (maksimal 200 sesi). Satu baris gagal validasi, tidak ada yang tersimpan.</summary>
     /// <remarks>Error per baris memakai kunci berindeks, misalnya <c>[2].waktuSelesai</c>.</remarks>
-    [Authorize(Roles = Peran.AdminPic)]
+    [Authorize(Roles = Peran.Pengelola)]
     [HttpPost("bulk")]
     [ProducesResponseType<IReadOnlyList<ScheduleDto>>(StatusCodes.Status201Created)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -66,7 +66,7 @@ public class SchedulesController(IScheduleService schedules) : ControllerBase
         Guid eventId, IReadOnlyList<CreateScheduleDto> daftar, CancellationToken ct) =>
         StatusCode(StatusCodes.Status201Created, await schedules.CreateBulkAsync(eventId, daftar, ct));
 
-    [Authorize(Roles = Peran.AdminPic)]
+    [Authorize(Roles = Peran.Pengelola)]
     [HttpPut("{id:guid}")]
     [ProducesResponseType<ScheduleDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -75,7 +75,7 @@ public class SchedulesController(IScheduleService schedules) : ControllerBase
     public async Task<ActionResult<ScheduleDto>> Update(Guid eventId, Guid id, UpdateScheduleDto dto, CancellationToken ct) =>
         Ok(await schedules.UpdateAsync(eventId, id, dto, ct));
 
-    [Authorize(Roles = Peran.AdminPic)]
+    [Authorize(Roles = Peran.Pengelola)]
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]

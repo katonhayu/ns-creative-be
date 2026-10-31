@@ -9,13 +9,14 @@ namespace NsCreative.Api.Controllers;
 
 /// <summary>Master data talent. Error ditangani ExceptionHandlingMiddleware.</summary>
 [ApiController]
-[Authorize(Roles = Peran.AdminPic)]
+[Authorize(Roles = Peran.Semua)]
 [Route("api/talents")]
 [Produces("application/json")]
 public class TalentsController(ITalentService talents) : ControllerBase
 {
     /// <summary>Daftar talent berpaginasi. Pencarian pada nama, jenis, dan contact person.</summary>
     /// <remarks>sortBy: nama (default), jenis, feeStandar, createdAt. Filter <c>jenis</c> harus sama persis.</remarks>
+    [Authorize(Roles = Peran.Pemantau)]
     [HttpGet]
     [ProducesResponseType<PagedResult<TalentListDto>>(StatusCodes.Status200OK)]
     public async Task<ActionResult<PagedResult<TalentListDto>>> GetList(
@@ -28,6 +29,7 @@ public class TalentsController(ITalentService talents) : ControllerBase
     public async Task<ActionResult<IReadOnlyList<TalentLookupDto>>> GetLookup([FromQuery] string? search, CancellationToken ct) =>
         Ok(await talents.GetLookupAsync(search, ct));
 
+    [Authorize(Roles = Peran.Pemantau)]
     [HttpGet("{id:guid}")]
     [ProducesResponseType<TalentDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
@@ -35,6 +37,7 @@ public class TalentsController(ITalentService talents) : ControllerBase
         Ok(await talents.GetByIdAsync(id, ct));
 
     /// <summary>Riwayat tampil talent beserta fee deal per event, terbaru lebih dulu.</summary>
+    [Authorize(Roles = Peran.Pemantau)]
     [HttpGet("{id:guid}/events")]
     [ProducesResponseType<PagedResult<TalentEventDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
@@ -56,6 +59,7 @@ public class TalentsController(ITalentService talents) : ControllerBase
         CancellationToken ct) =>
         Ok(await talents.GetConflictsAsync(id, tanggalMulai, tanggalSelesai, kecualiEventId, ct));
 
+    [Authorize(Roles = Peran.Admin)]
     [HttpPost]
     [ProducesResponseType<TalentDto>(StatusCodes.Status201Created)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -65,6 +69,7 @@ public class TalentsController(ITalentService talents) : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = hasil.Id }, hasil);
     }
 
+    [Authorize(Roles = Peran.Admin)]
     [HttpPut("{id:guid}")]
     [ProducesResponseType<TalentDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]

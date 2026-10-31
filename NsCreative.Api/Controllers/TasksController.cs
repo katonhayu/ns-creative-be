@@ -10,7 +10,8 @@ namespace NsCreative.Api.Controllers;
 
 /// <summary>
 /// Task persiapan event. Perubahan ditolak 422 jika event sudah selesai atau dibatalkan.
-/// Crew hanya melihat dan mengubah status task yang PIC-nya dirinya.
+/// Admin dan crew PIC event mengelola semua task; crew lain yang terlibat hanya melihat,
+/// kecuali mengubah status task yang PIC-nya crew miliknya.
 /// </summary>
 [ApiController]
 [Authorize]
@@ -57,7 +58,7 @@ public class TasksController(ITaskService tasks) : ControllerBase
         Ok(await tasks.GetMineAsync(query, status, ct));
 
     /// <summary>Buat task. Status awal otomatis <c>belum</c>.</summary>
-    [Authorize(Roles = Peran.AdminPic)]
+    [Authorize(Roles = Peran.Pengelola)]
     [HttpPost]
     [ProducesResponseType<TaskDto>(StatusCodes.Status201Created)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -70,7 +71,7 @@ public class TasksController(ITaskService tasks) : ControllerBase
     }
 
     /// <summary>Ubah isi task. Status tidak bisa diubah lewat sini.</summary>
-    [Authorize(Roles = Peran.AdminPic)]
+    [Authorize(Roles = Peran.Pengelola)]
     [HttpPut("{id:guid}")]
     [ProducesResponseType<TaskDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -80,7 +81,7 @@ public class TasksController(ITaskService tasks) : ControllerBase
         Ok(await tasks.UpdateAsync(eventId, id, dto, ct));
 
     /// <summary>Ubah status: belum, dikerjakan, atau selesai. <c>terlambat</c> ditolak karena dihitung otomatis.</summary>
-    [Authorize(Roles = Peran.Semua)]
+    [Authorize(Roles = Peran.Pengelola)]
     [HttpPatch("{id:guid}/status")]
     [ProducesResponseType<TaskDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -90,7 +91,7 @@ public class TasksController(ITaskService tasks) : ControllerBase
         Guid eventId, Guid id, UpdateTaskStatusDto dto, CancellationToken ct) =>
         Ok(await tasks.UpdateStatusAsync(eventId, id, dto, ct));
 
-    [Authorize(Roles = Peran.AdminPic)]
+    [Authorize(Roles = Peran.Pengelola)]
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]

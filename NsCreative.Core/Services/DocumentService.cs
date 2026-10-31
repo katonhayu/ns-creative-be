@@ -54,7 +54,7 @@ public class DocumentService(
     }
 
     public async Task<DocumentDto> GetByIdAsync(Guid id, CancellationToken ct = default) =>
-        KeDto(await CariAsync(id, lacak: false, ct));
+        KeDto(await CariAsync(id, ubah: false, ct));
 
     /// <summary>
     /// Simpan file dulu, baru metadata. Jika penyimpanan metadata gagal, file dihapus lagi
@@ -63,7 +63,8 @@ public class DocumentService(
     public async Task<DocumentDto> UploadAsync(Guid eventId, UploadDocumentDto dto, CancellationToken ct = default)
     {
         await uploadValidator.ValidateAndThrowAsync(dto, ct);
-        await akses.LihatAsync(eventId, ct);
+        // Dokumen tetap boleh diunggah setelah event selesai (berita acara, foto, invoice).
+        await akses.KelolaAsync(eventId, ct);
 
         var ekstensi = Path.GetExtension(dto.NamaFileAsli!).ToLowerInvariant();
         var isi = await StreamBisaDiulangAsync(dto.Isi!, ct);
@@ -104,7 +105,7 @@ public class DocumentService(
     /// <summary>Izin dicek (lewat CariAsync) sebelum file dibuka.</summary>
     public async Task<FileDokumen> DownloadAsync(Guid id, CancellationToken ct = default)
     {
-        var dokumen = await CariAsync(id, lacak: false, ct);
+        var dokumen = await CariAsync(id, ubah: false, ct);
         var isi = penyimpanan.Buka(dokumen.FilePath)
             ?? throw new NotFoundException("File dokumen tidak ditemukan di server. Hapus dokumen ini lalu upload ulang.");
         return new FileDokumen(
@@ -116,7 +117,7 @@ public class DocumentService(
     public async Task<DocumentDto> UpdateAsync(Guid id, UpdateDocumentDto dto, CancellationToken ct = default)
     {
         await updateValidator.ValidateAndThrowAsync(dto, ct);
-        var dokumen = await CariAsync(id, lacak: true, ct);
+        var dokumen = await CariAsync(id, ubah: true, ct);
 
         dokumen.NamaDokumen = Teks.Wajib(dto.NamaDokumen);
         dokumen.Jenis = Teks.Wajib(dto.Jenis);
@@ -130,19 +131,23 @@ public class DocumentService(
     /// <summary>Hapus record lalu file fisiknya.</summary>
     public async Task DeleteAsync(Guid id, CancellationToken ct = default)
     {
-        var dokumen = await CariAsync(id, lacak: true, ct);
+        var dokumen = await CariAsync(id, ubah: true, ct);
         db.Documents.Remove(dokumen);
         await db.SaveChangesAsync(ct);
         penyimpanan.Hapus(dokumen.FilePath);
     }
 
-    /// <summary>Endpoint /documents/{id} tidak membawa eventId, jadi izin dicek lewat event pemilik dokumen.</summary>
-    private async Task<Document> CariAsync(Guid id, bool lacak, CancellationToken ct)
+    /// <summary>
+    /// Endpoint /documents/{id} tidak membawa eventId, jadi izin dicek lewat event pemilik dokumen:
+    /// <paramref name="ubah"/> = PIC event atau admin (dan entity dilacak), selain itu cukup boleh melihat.
+    /// </summary>
+    private async Task<Document> CariAsync(Guid id, bool ubah, CancellationToken ct)
     {
-        var q = lacak ? db.Documents : db.Documents.AsNoTracking();
+        var q = ubah ? db.Documents : db.Documents.AsNoTracking();
         var dokumen = await q.FirstOrDefaultAsync(d => d.Id == id, ct)
             ?? throw new NotFoundException("Dokumen tidak ditemukan.");
-        await akses.LihatAsync(dokumen.EventId, ct);
+        if (ubah) await akses.KelolaAsync(dokumen.EventId, ct);
+        else await akses.LihatAsync(dokumen.EventId, ct);
         return dokumen;
     }
 

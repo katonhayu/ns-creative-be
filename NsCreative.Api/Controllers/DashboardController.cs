@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace NsCreative.Api.Controllers;
 
 [ApiController]
-[Authorize(Roles = Peran.AdminPic)]
+[Authorize(Roles = Peran.Semua)]
 [Route("api/dashboard")]
 [Produces("application/json")]
 public class DashboardController(IDashboardService dashboard) : ControllerBase

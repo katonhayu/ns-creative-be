@@ -22,14 +22,14 @@ public class EventConfiguration : IEntityTypeConfiguration<Event>
             .HasForeignKey(e => e.ClientId)
             .OnDelete(DeleteBehavior.Restrict)
             .HasConstraintName("fk_events_client");
-        builder.HasOne(e => e.PicUser)
+        builder.HasOne(e => e.PicCrew)
             .WithMany()
-            .HasForeignKey(e => e.PicUserId)
+            .HasForeignKey(e => e.PicCrewId)
             .OnDelete(DeleteBehavior.Restrict)
             .HasConstraintName("fk_events_pic");
 
         builder.HasIndex(e => e.ClientId).HasDatabaseName("ix_events_client_id");
-        builder.HasIndex(e => e.PicUserId).HasDatabaseName("ix_events_pic_user_id");
+        builder.HasIndex(e => e.PicCrewId).HasDatabaseName("ix_events_pic_crew_id");
         builder.HasIndex(e => e.Status).HasDatabaseName("ix_events_status");
         builder.HasIndex(e => e.TanggalMulai).HasDatabaseName("ix_events_tanggal_mulai").IsDescending();
 

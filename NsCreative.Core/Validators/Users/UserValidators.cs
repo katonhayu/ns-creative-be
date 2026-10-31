@@ -22,7 +22,7 @@ public class CreateUserDtoValidator : AbstractValidator<CreateUserDto>
         RuleFor(x => x.Nama).Wajib("Nama", 100);
         RuleFor(x => x.Email).EmailWajib();
         RuleFor(x => x.Password).Password();
-        RuleFor(x => x.Role).IsInEnum().WithMessage("Peran harus admin, pic, atau crew.");
+        RuleFor(x => x.Role).IsInEnum().WithMessage("Peran harus admin, event_manager, atau crew.");
     }
 }
 
@@ -32,7 +32,7 @@ public class UpdateUserDtoValidator : AbstractValidator<UpdateUserDto>
     {
         RuleFor(x => x.Nama).Wajib("Nama", 100);
         RuleFor(x => x.Email).EmailWajib();
-        RuleFor(x => x.Role).IsInEnum().WithMessage("Peran harus admin, pic, atau crew.");
+        RuleFor(x => x.Role).IsInEnum().WithMessage("Peran harus admin, event_manager, atau crew.");
     }
 }
 

@@ -20,6 +20,11 @@ public record EventCrewDto(
     DateTime CreatedAt,
     DateTime UpdatedAt);
 
+/// <summary>Pilihan PIC task dan sesi rundown di satu event.</summary>
+/// <param name="Keterangan">"PIC event", atau posisi crew di event ini.</param>
+/// <param name="PunyaAkun">Crew punya akun login, jadi bisa melihat task-nya dan mengubah statusnya sendiri.</param>
+public record PenanggungJawabDto(Guid CrewId, string Nama, string Keterangan, bool PunyaAkun);
+
 public interface IEventCrewInput
 {
     string Posisi { get; }

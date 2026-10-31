@@ -12,7 +12,8 @@ public interface ICrewService
 {
     Task<PagedResult<CrewListDto>> GetListAsync(QueryParams query, string? keahlian, CancellationToken ct = default);
     Task<CrewDto> GetByIdAsync(Guid id, CancellationToken ct = default);
-    Task<IReadOnlyList<CrewLookupDto>> GetLookupAsync(string? search, string? keahlian, CancellationToken ct = default);
+    Task<IReadOnlyList<CrewLookupDto>> GetLookupAsync(
+        string? search, string? keahlian, bool punyaAkun, CancellationToken ct = default);
     Task<PagedResult<CrewEventDto>> GetEventsAsync(Guid id, QueryParams query, CancellationToken ct = default);
     Task<IReadOnlyList<CrewBentrokDto>> GetConflictsAsync(
         Guid id, DateOnly? tanggalMulai, DateOnly? tanggalSelesai, Guid? kecualiEventId, CancellationToken ct = default);
@@ -51,14 +52,20 @@ public class CrewService(
             .FirstOrDefaultAsync(ct)
         ?? throw new NotFoundException("Crew tidak ditemukan.");
 
+    /// <summary><paramref name="punyaAkun"/> = hanya crew dengan akun login aktif, untuk pilihan PIC event.</summary>
     public async Task<IReadOnlyList<CrewLookupDto>> GetLookupAsync(
-        string? search, string? keahlian, CancellationToken ct = default) =>
-        await FilterKeahlian(db.Crews.AsNoTracking(), keahlian)
+        string? search, string? keahlian, bool punyaAkun, CancellationToken ct = default)
+    {
+        var q = FilterKeahlian(db.Crews.AsNoTracking(), keahlian);
+        if (punyaAkun) q = q.Where(c => c.User != null && c.User.IsAktif);
+
+        return await q
             .Cari(search, c => c.Nama, c => c.Keahlian)
             .OrderBy(c => c.Nama)
             .Take(QueryParams.LookupMaks)
-            .Select(c => new CrewLookupDto(c.Id, c.Nama, c.Keahlian))
+            .Select(c => new CrewLookupDto(c.Id, c.Nama, c.Keahlian, c.User != null && c.User.IsAktif))
             .ToListAsync(ct);
+    }
 
     public async Task<PagedResult<CrewEventDto>> GetEventsAsync(Guid id, QueryParams query, CancellationToken ct = default)
     {
@@ -115,11 +122,20 @@ public class CrewService(
         return await GetByIdAsync(crew.Id, ct);
     }
 
-    /// <summary>Soft delete. Penugasan di event lama tetap tersimpan.</summary>
+    /// <summary>
+    /// Soft delete. Penugasan di event lama tetap tersimpan. Ditolak jika crew masih menjadi PIC
+    /// event aktif, karena event itu akan kehilangan pengelolanya.
+    /// </summary>
     public async Task DeleteAsync(Guid id, CancellationToken ct = default)
     {
         var crew = await db.Crews.FirstOrDefaultAsync(c => c.Id == id, ct)
             ?? throw new NotFoundException("Crew tidak ditemukan.");
+        var jumlahAktif = await db.Events.CountAsync(
+            e => e.PicCrewId == id && EventStatusExtensions.Aktif.Contains(e.Status), ct);
+        if (jumlahAktif > 0)
+            throw new BusinessRuleException(
+                $"{crew.Nama} masih menjadi PIC {jumlahAktif} event aktif. Pindahkan PIC-nya terlebih dahulu.");
+
         crew.DeletedAt = DateTime.UtcNow;
         await db.SaveChangesAsync(ct);
     }

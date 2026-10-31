@@ -12,7 +12,7 @@ namespace NsCreative.Api.Controllers;
 /// Semua perubahan ditolak 422 jika event sudah selesai atau dibatalkan.
 /// </summary>
 [ApiController]
-[Authorize(Roles = Peran.AdminPic)]
+[Authorize(Roles = Peran.Semua)]
 [Route("api/events/{eventId:guid}/vendors")]
 [Produces("application/json")]
 public class EventVendorsController(IEventVendorService vendors) : ControllerBase
@@ -34,6 +34,7 @@ public class EventVendorsController(IEventVendorService vendors) : ControllerBas
 
     /// <summary>⚡ Tambah transaksi vendor. Baris budget kategori Vendor (estimasi = biaya) dibuat otomatis.</summary>
     /// <remarks>Status pembayaran opsional, default <c>belum_bayar</c>, dan disalin ke baris budget.</remarks>
+    [Authorize(Roles = Peran.Pengelola)]
     [HttpPost]
     [ProducesResponseType<EventVendorDto>(StatusCodes.Status201Created)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -46,6 +47,7 @@ public class EventVendorsController(IEventVendorService vendors) : ControllerBas
     }
 
     /// <summary>⚡ Ubah kebutuhan dan biaya. Estimasi budget ikut biaya; biaya aktual tidak diubah.</summary>
+    [Authorize(Roles = Peran.Pengelola)]
     [HttpPut("{id:guid}")]
     [ProducesResponseType<EventVendorDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -56,6 +58,7 @@ public class EventVendorsController(IEventVendorService vendors) : ControllerBas
         Ok(await vendors.UpdateAsync(eventId, id, dto, ct));
 
     /// <summary>⚡ Ubah status pembayaran di transaksi vendor dan budget terkait sekaligus.</summary>
+    [Authorize(Roles = Peran.Pengelola)]
     [HttpPatch("{id:guid}/pembayaran")]
     [ProducesResponseType<EventVendorDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -66,6 +69,7 @@ public class EventVendorsController(IEventVendorService vendors) : ControllerBas
         Ok(await vendors.UpdatePembayaranAsync(eventId, id, dto, ct));
 
     /// <summary>⚡ Hapus transaksi beserta budget terkait. Ditolak 422 jika biaya aktual sudah dicatat.</summary>
+    [Authorize(Roles = Peran.Pengelola)]
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]

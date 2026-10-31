@@ -54,7 +54,8 @@ public class ReportService(
     }
 
     /// <summary>
-    /// Event selesai yang terlihat oleh pengguna (pic: miliknya) beserta laporannya, terbaru dulu.
+    /// Event selesai yang terlihat oleh pengguna (crew: yang ia pegang atau tempat ia ditugaskan)
+    /// beserta laporannya, terbaru dulu.
     /// Filter <paramref name="tahun"/> memakai tahun tanggal mulai event.
     /// </summary>
     public async Task<IReadOnlyList<LaporanEventDto>> GetEventSelesaiAsync(int? tahun, CancellationToken ct = default)
@@ -106,7 +107,7 @@ public class ReportService(
         dto ??= new CreateReportDto(null, null, null, null);
         await createValidator.ValidateAndThrowAsync(dto, ct);
 
-        var ev = await akses.LihatAsync(eventId, ct);
+        var ev = await akses.KelolaAsync(eventId, ct);
         if (ev.Status != EventStatus.Selesai)
             throw new BusinessRuleException(
                 $"Laporan hanya bisa dibuat untuk event yang sudah selesai. Status event saat ini {ev.Status.Label()}.");
@@ -133,7 +134,7 @@ public class ReportService(
     public async Task<ReportDto> UpdateAsync(Guid eventId, UpdateReportDto dto, CancellationToken ct = default)
     {
         await updateValidator.ValidateAndThrowAsync(dto, ct);
-        await akses.LihatAsync(eventId, ct);
+        await akses.KelolaAsync(eventId, ct);
         var laporan = await db.Reports.FirstOrDefaultAsync(r => r.EventId == eventId, ct)
             ?? throw new NotFoundException("Laporan untuk event ini belum dibuat.");
 

@@ -9,26 +9,29 @@ namespace NsCreative.Api.Controllers;
 
 /// <summary>Master data crew. Error ditangani ExceptionHandlingMiddleware.</summary>
 [ApiController]
-[Authorize(Roles = Peran.AdminPic)]
+[Authorize(Roles = Peran.Semua)]
 [Route("api/crews")]
 [Produces("application/json")]
 public class CrewsController(ICrewService crews) : ControllerBase
 {
     /// <summary>Daftar crew berpaginasi. Pencarian pada nama, keahlian, dan telepon.</summary>
     /// <remarks>sortBy: nama (default), keahlian, createdAt. Filter <c>keahlian</c> berupa "mengandung".</remarks>
+    [Authorize(Roles = Peran.Pemantau)]
     [HttpGet]
     [ProducesResponseType<PagedResult<CrewListDto>>(StatusCodes.Status200OK)]
     public async Task<ActionResult<PagedResult<CrewListDto>>> GetList(
         [FromQuery] QueryParams query, [FromQuery] string? keahlian, CancellationToken ct) =>
         Ok(await crews.GetListAsync(query, keahlian, ct));
 
-    /// <summary>Pilihan crew untuk dropdown penugasan (maksimal 50, urut nama).</summary>
+    /// <summary>Pilihan crew untuk dropdown penugasan dan PIC event (maksimal 50, urut nama).</summary>
+    /// <remarks><c>punyaAkun=true</c>: hanya crew dengan akun login aktif, yaitu yang bisa menjadi PIC event.</remarks>
     [HttpGet("lookup")]
     [ProducesResponseType<IReadOnlyList<CrewLookupDto>>(StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<CrewLookupDto>>> GetLookup(
-        [FromQuery] string? search, [FromQuery] string? keahlian, CancellationToken ct) =>
-        Ok(await crews.GetLookupAsync(search, keahlian, ct));
+        [FromQuery] string? search, [FromQuery] string? keahlian, [FromQuery] bool punyaAkun, CancellationToken ct) =>
+        Ok(await crews.GetLookupAsync(search, keahlian, punyaAkun, ct));
 
+    [Authorize(Roles = Peran.Pemantau)]
     [HttpGet("{id:guid}")]
     [ProducesResponseType<CrewDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
@@ -36,6 +39,7 @@ public class CrewsController(ICrewService crews) : ControllerBase
         Ok(await crews.GetByIdAsync(id, ct));
 
     /// <summary>Riwayat penugasan crew, terbaru lebih dulu.</summary>
+    [Authorize(Roles = Peran.Pemantau)]
     [HttpGet("{id:guid}/events")]
     [ProducesResponseType<PagedResult<CrewEventDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
@@ -62,6 +66,7 @@ public class CrewsController(ICrewService crews) : ControllerBase
         Ok(await crews.GetConflictsAsync(id, tanggalMulai, tanggalSelesai, kecualiEventId, ct));
 
     /// <summary>Tambah crew. <c>userId</c> opsional: akun berperan crew yang belum ditautkan.</summary>
+    [Authorize(Roles = Peran.Admin)]
     [HttpPost]
     [ProducesResponseType<CrewDto>(StatusCodes.Status201Created)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -72,6 +77,7 @@ public class CrewsController(ICrewService crews) : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = hasil.Id }, hasil);
     }
 
+    [Authorize(Roles = Peran.Admin)]
     [HttpPut("{id:guid}")]
     [ProducesResponseType<CrewDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]

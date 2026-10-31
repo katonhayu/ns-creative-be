@@ -22,7 +22,8 @@ public record CrewListDto(
     string? Keahlian,
     int JumlahEvent);
 
-public record CrewLookupDto(Guid Id, string Nama, string? Keahlian);
+/// <param name="PunyaAkun">Ditautkan ke akun login aktif, sehingga bisa menjadi PIC event.</param>
+public record CrewLookupDto(Guid Id, string Nama, string? Keahlian, bool PunyaAkun);
 
 /// <summary>Riwayat penugasan crew di satu event.</summary>
 public record CrewEventDto(

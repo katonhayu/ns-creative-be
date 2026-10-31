@@ -34,8 +34,18 @@ public class EventCrewsController(IEventCrewService crews) : ControllerBase
     public async Task<ActionResult<EventCrewDto>> GetById(Guid eventId, Guid id, CancellationToken ct) =>
         Ok(await crews.GetByIdAsync(eventId, id, ct));
 
+    /// <summary>Pilihan PIC task dan sesi rundown: PIC event, lalu crew yang ditugaskan (urut nama).</summary>
+    [Authorize(Roles = Peran.Semua)]
+    [HttpGet("~/api/events/{eventId:guid}/penanggung-jawab")]
+    [ProducesResponseType<IReadOnlyList<PenanggungJawabDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<IReadOnlyList<PenanggungJawabDto>>> GetPenanggungJawab(
+        Guid eventId, CancellationToken ct) =>
+        Ok(await crews.GetPenanggungJawabAsync(eventId, ct));
+
     /// <summary>Tugaskan crew. Jika bentrok dengan event lain, tetap tersimpan dan <c>bentrok</c> berisi daftarnya.</summary>
-    [Authorize(Roles = Peran.AdminPic)]
+    [Authorize(Roles = Peran.Pengelola)]
     [HttpPost]
     [ProducesResponseType<EventCrewDto>(StatusCodes.Status201Created)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -48,7 +58,7 @@ public class EventCrewsController(IEventCrewService crews) : ControllerBase
     }
 
     /// <summary>Ubah posisi dan tanggal bertugas.</summary>
-    [Authorize(Roles = Peran.AdminPic)]
+    [Authorize(Roles = Peran.Pengelola)]
     [HttpPut("{id:guid}")]
     [ProducesResponseType<EventCrewDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -58,7 +68,7 @@ public class EventCrewsController(IEventCrewService crews) : ControllerBase
         Guid eventId, Guid id, UpdateEventCrewDto dto, CancellationToken ct) =>
         Ok(await crews.UpdateAsync(eventId, id, dto, ct));
 
-    [Authorize(Roles = Peran.AdminPic)]
+    [Authorize(Roles = Peran.Pengelola)]
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]

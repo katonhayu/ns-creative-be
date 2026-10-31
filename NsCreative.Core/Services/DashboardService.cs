@@ -12,7 +12,7 @@ public interface IDashboardService
 
 /// <summary>
 /// Ringkasan halaman depan. Aturannya sama dengan mode mock frontend (dashboard.api.ts).
-/// Role pic hanya melihat event miliknya (lewat <see cref="IAksesEvent.Terlihat"/>).
+/// Crew hanya melihat event yang ia pegang atau tempat ia ditugaskan (lewat <see cref="IAksesEvent.Terlihat"/>).
 /// </summary>
 public class DashboardService(IAppDbContext db, IAksesEvent akses) : IDashboardService
 {
@@ -41,7 +41,7 @@ public class DashboardService(IAppDbContext db, IAksesEvent akses) : IDashboardS
             .Select(e => new
             {
                 e.Id, e.Nama, e.TanggalMulai, e.TanggalSelesai, e.Lokasi, e.Status,
-                NamaPic = e.PicUser.Nama,
+                NamaPic = e.PicCrew.Nama,
                 Total = e.Tasks.Count(),
                 Selesai = e.Tasks.Count(t => t.Status == TaskItemStatus.Selesai),
             })
@@ -65,7 +65,7 @@ public class DashboardService(IAppDbContext db, IAksesEvent akses) : IDashboardS
             .Take(JumlahDaftar)
             .Select(t => new DashboardTaskDto(
                 t.Id, t.EventId, t.NamaTugas, t.Deadline!.Value, t.Status, t.Event.Nama,
-                t.PicUser != null ? t.PicUser.Nama : null,
+                t.PicCrew != null ? t.PicCrew.Nama : null,
                 t.Deadline < hariIni))
             .ToListAsync(ct);
 

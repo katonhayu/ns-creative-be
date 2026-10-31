@@ -20,15 +20,15 @@ public class TaskItemConfiguration : IEntityTypeConfiguration<TaskItem>
             .HasForeignKey(e => e.EventId)
             .OnDelete(DeleteBehavior.Cascade)
             .HasConstraintName("fk_tasks_event");
-        // PIC dihapus → task tetap ada tanpa PIC.
-        builder.HasOne(e => e.PicUser)
+        // Crew PIC dihapus permanen → task tetap ada tanpa PIC (crew biasanya hanya di-soft delete).
+        builder.HasOne(e => e.PicCrew)
             .WithMany()
-            .HasForeignKey(e => e.PicUserId)
+            .HasForeignKey(e => e.PicCrewId)
             .OnDelete(DeleteBehavior.SetNull)
             .HasConstraintName("fk_tasks_pic");
 
         builder.HasIndex(e => e.EventId).HasDatabaseName("ix_tasks_event_id");
-        builder.HasIndex(e => e.PicUserId).HasDatabaseName("ix_tasks_pic_user_id");
+        builder.HasIndex(e => e.PicCrewId).HasDatabaseName("ix_tasks_pic_crew_id");
         builder.HasIndex(e => e.Status).HasDatabaseName("ix_tasks_status");
         // Dipakai dashboard: task mendekati deadline.
         builder.HasIndex(e => e.Deadline).HasDatabaseName("ix_tasks_deadline").HasFilter("((status)::text <> 'selesai'::text)");

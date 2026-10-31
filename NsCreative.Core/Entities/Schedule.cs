@@ -6,8 +6,9 @@ public class Schedule : BaseEntity
     public Guid EventId { get; set; }
     public Event Event { get; set; } = null!;
 
-    public Guid? PicUserId { get; set; }
-    public User? PicUser { get; set; }
+    /// <summary>Crew yang terlibat di event: PIC event atau crew yang ditugaskan.</summary>
+    public Guid? PicCrewId { get; set; }
+    public Crew? PicCrew { get; set; }
 
     public DateOnly Tanggal { get; set; }
     public TimeOnly WaktuMulai { get; set; }

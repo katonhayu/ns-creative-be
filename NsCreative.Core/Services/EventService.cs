@@ -4,6 +4,7 @@ using NsCreative.Core.Entities;
 using NsCreative.Core.Enums;
 using NsCreative.Core.Exceptions;
 using FluentValidation;
+using FluentValidation.Results;
 using Microsoft.EntityFrameworkCore;
 
 namespace NsCreative.Core.Services;
@@ -50,34 +51,37 @@ public class EventService(
     public async Task<PagedResult<EventListDto>> GetListAsync(
         QueryParams query, EventFilter filter, CancellationToken ct = default)
     {
-        // pic hanya melihat event miliknya, crew hanya event tempat ia bertugas.
+        // Crew hanya melihat event yang ia pegang atau tempat ia ditugaskan.
         var q = akses.Terlihat(Events);
         if (filter.Status is { } status) q = q.Where(e => e.Status == status);
         if (filter.ClientId is { } clientId) q = q.Where(e => e.ClientId == clientId);
-        if (filter.PicUserId is { } picUserId) q = q.Where(e => e.PicUserId == picUserId);
+        if (filter.PicCrewId is { } picCrewId) q = q.Where(e => e.PicCrewId == picCrewId);
         // Irisan rentang: event 20–22 Nov ikut tampil untuk filter 21–30 Nov.
         if (filter.DariTanggal is { } dari) q = q.Where(e => (e.TanggalSelesai ?? e.TanggalMulai) >= dari);
         if (filter.SampaiTanggal is { } sampai) q = q.Where(e => e.TanggalMulai <= sampai);
 
+        var (semua, saya) = (pengguna.Role == UserRole.Admin, AkunCrew);
         return await q
             .Cari(query.Search, e => e.Nama, e => e.Jenis, e => e.Lokasi, e => e.Client.Nama, e => e.Client.Perusahaan)
             .Urutkan(query, Urutan)
             .Select(e => new EventListDto(
                 e.Id, e.Nama, e.Jenis, e.TanggalMulai, e.TanggalSelesai, e.Lokasi, e.Deskripsi, e.Status,
-                e.ClientId, e.Client.Nama, e.Client.Perusahaan, e.PicUserId, e.PicUser.Nama))
+                e.ClientId, e.Client.Nama, e.Client.Perusahaan, e.PicCrewId, e.PicCrew.Nama,
+                semua || (saya != null && e.PicCrew.UserId == saya)))
             .ToPagedResultAsync(query, ct);
     }
 
     public async Task<EventDto> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
-        await akses.LihatAsync(id, ct);
+        var info = await akses.LihatAsync(id, ct);
         var e = await Events
             .Where(e => e.Id == id)
             .Select(e => new
             {
                 e.Id, e.Nama, e.Jenis, e.TanggalMulai, e.TanggalSelesai, e.Lokasi, e.Deskripsi, e.Status,
                 e.ClientId, NamaClient = e.Client.Nama, e.Client.Perusahaan, e.Client.Telepon, EmailClient = e.Client.Email,
-                e.PicUserId, NamaPic = e.PicUser.Nama, EmailPic = e.PicUser.Email,
+                e.PicCrewId, NamaPic = e.PicCrew.Nama, TeleponPic = e.PicCrew.Telepon,
+                EmailPic = e.PicCrew.User != null ? e.PicCrew.User.Email : null,
                 e.CreatedAt, e.UpdatedAt,
             })
             .FirstOrDefaultAsync(ct)
@@ -87,7 +91,7 @@ public class EventService(
             e.Id, e.Nama, e.Jenis, e.TanggalMulai, e.TanggalSelesai, e.Lokasi, e.Deskripsi, e.Status,
             e.Status.StatusBerikutnya(),
             e.ClientId, e.NamaClient, e.Perusahaan, e.Telepon, e.EmailClient,
-            e.PicUserId, e.NamaPic, e.EmailPic, e.CreatedAt, e.UpdatedAt);
+            e.PicCrewId, e.NamaPic, e.TeleponPic, e.EmailPic, info.BolehKelola, e.CreatedAt, e.UpdatedAt);
     }
 
     public async Task<IReadOnlyList<EventLookupDto>> GetLookupAsync(
@@ -140,12 +144,10 @@ public class EventService(
     public async Task<EventDto> CreateAsync(CreateEventDto dto, CancellationToken ct = default)
     {
         await createValidator.ValidateAndThrowAsync(dto, ct);
-        if (pengguna.Role == UserRole.Pic && dto.PicUserId != pengguna.Id)
-            throw new ForbiddenException("Sebagai PIC, Anda hanya bisa membuat event dengan diri sendiri sebagai PIC.");
+        var picCrewId = await PicEventBaruAsync(dto.PicCrewId, ct);
         await CekClientAsync(dto.ClientId, ct);
-        await CekPicAsync(dto.PicUserId, ct);
 
-        var ev = new Event { Status = EventStatus.Draft };
+        var ev = new Event { Status = EventStatus.Draft, PicCrewId = picCrewId };
         Terapkan(ev, dto);
         db.Events.Add(ev);
         await db.SaveChangesAsync(ct);
@@ -156,15 +158,19 @@ public class EventService(
     public async Task<EventDto> UpdateAsync(Guid id, UpdateEventDto dto, CancellationToken ct = default)
     {
         await updateValidator.ValidateAndThrowAsync(dto, ct);
-        await akses.LihatAsync(id, ct);
+        await akses.KelolaAsync(id, ct);
         var ev = await CariAsync(id, ct);
-        if (pengguna.Role == UserRole.Pic && dto.PicUserId != pengguna.Id)
-            throw new ForbiddenException("Hanya admin yang bisa memindahkan event ke PIC lain.");
 
         // Dicek hanya jika berubah, supaya event lama dengan client yang kini dihapus
-        // atau PIC yang kini nonaktif tetap bisa diedit.
+        // atau PIC yang kini nonaktif tetap bisa diedit. PIC kosong berarti tidak diubah.
         if (dto.ClientId != ev.ClientId) await CekClientAsync(dto.ClientId, ct);
-        if (dto.PicUserId != ev.PicUserId) await CekPicAsync(dto.PicUserId, ct);
+        if (dto.PicCrewId is { } picBaru && picBaru != ev.PicCrewId)
+        {
+            if (pengguna.Role != UserRole.Admin)
+                throw new ForbiddenException("Hanya admin yang bisa memindahkan event ke PIC lain.");
+            await CekPicAsync(picBaru, ct);
+            ev.PicCrewId = picBaru;
+        }
 
         Terapkan(ev, dto);
         await db.SaveChangesAsync(ct);
@@ -175,7 +181,7 @@ public class EventService(
     public async Task<EventDto> UpdateStatusAsync(Guid id, UpdateEventStatusDto dto, CancellationToken ct = default)
     {
         await statusValidator.ValidateAndThrowAsync(dto, ct);
-        await akses.LihatAsync(id, ct);
+        await akses.KelolaAsync(id, ct);
         var ev = await CariAsync(id, ct);
         var baru = dto.Status!.Value;
 
@@ -223,24 +229,57 @@ public class EventService(
             throw new BusinessRuleException("Client yang dipilih tidak ditemukan atau sudah dihapus.");
     }
 
-    /// <summary>PIC harus akun aktif berperan admin atau pic. Crew tidak boleh melihat budget, jadi tidak bisa jadi PIC.</summary>
-    private async Task CekPicAsync(Guid userId, CancellationToken ct)
+    /// <summary>Akun pengguna login jika ia berperan crew; dipakai untuk mengenali event yang ia pegang.</summary>
+    private Guid? AkunCrew => pengguna.Role == UserRole.Crew ? pengguna.Id : null;
+
+    /// <summary>
+    /// PIC event baru. Crew yang membuat event otomatis menjadi PIC-nya, jadi akunnya harus sudah
+    /// ditautkan ke data crew. Admin wajib memilih PIC.
+    /// </summary>
+    private async Task<Guid> PicEventBaruAsync(Guid? dipilih, CancellationToken ct)
     {
-        var pic = await db.Users.AsNoTracking()
-            .Where(u => u.Id == userId)
-            .Select(u => new { u.Nama, u.Role, u.IsAktif })
+        if (pengguna.Role == UserRole.Crew)
+        {
+            var saya = pengguna.Id;
+            var crewSaya = await db.Crews.AsNoTracking()
+                .Where(c => c.UserId == saya)
+                .Select(c => (Guid?)c.Id)
+                .FirstOrDefaultAsync(ct)
+                ?? throw new BusinessRuleException(
+                    "Akun Anda belum ditautkan ke data crew. Minta admin menautkannya di menu Crew sebelum membuat event.");
+            if (dipilih is { } lain && lain != crewSaya)
+                throw new ForbiddenException("Anda hanya bisa membuat event dengan diri sendiri sebagai PIC.");
+            return crewSaya;
+        }
+
+        if (dipilih is not { } picCrewId)
+            throw new ValidationException([new ValidationFailure(nameof(CreateEventDto.PicCrewId), "PIC harus dipilih.")]);
+        await CekPicAsync(picCrewId, ct);
+        return picCrewId;
+    }
+
+    /// <summary>
+    /// PIC event harus crew yang belum dihapus dan punya akun login aktif, karena PIC-lah yang
+    /// mengelola event lewat aplikasi.
+    /// </summary>
+    private async Task CekPicAsync(Guid crewId, CancellationToken ct)
+    {
+        var pic = await db.Crews.AsNoTracking()
+            .Where(c => c.Id == crewId)
+            .Select(c => new { c.Nama, PunyaAkun = c.User != null, AkunAktif = c.User != null && c.User.IsAktif })
             .FirstOrDefaultAsync(ct)
-            ?? throw new BusinessRuleException("PIC yang dipilih tidak ditemukan.");
-        if (pic.Role == UserRole.Crew)
-            throw new BusinessRuleException($"{pic.Nama} berperan crew dan tidak bisa menjadi PIC event.");
-        if (!pic.IsAktif)
+            ?? throw new BusinessRuleException("Crew PIC yang dipilih tidak ditemukan atau sudah dihapus.");
+        if (!pic.PunyaAkun)
+            throw new BusinessRuleException(
+                $"{pic.Nama} belum punya akun login, sehingga tidak bisa mengelola event sebagai PIC. " +
+                "Tautkan akunnya di menu Crew terlebih dahulu.");
+        if (!pic.AkunAktif)
             throw new BusinessRuleException($"Akun {pic.Nama} sedang nonaktif dan tidak bisa menjadi PIC event.");
     }
 
     private static void Terapkan(Event ev, IEventInput dto)
     {
         ev.ClientId = dto.ClientId;
-        ev.PicUserId = dto.PicUserId;
         ev.Nama = Teks.Wajib(dto.Nama);
         ev.Jenis = Teks.Wajib(dto.Jenis);
         ev.TanggalMulai = dto.TanggalMulai;

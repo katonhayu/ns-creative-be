@@ -15,7 +15,7 @@ public record UserDto(
 
 public record UserListDto(Guid Id, string Nama, string Email, UserRole Role, bool IsAktif, int JumlahEventPic);
 
-/// <summary>Pilihan dropdown, misalnya PIC event. Hanya pengguna aktif.</summary>
+/// <summary>Pilihan dropdown, misalnya akun login yang ditautkan ke data crew. Hanya pengguna aktif.</summary>
 public record UserLookupDto(Guid Id, string Nama, string Email, UserRole Role);
 
 public record CreateUserDto(string Nama, string Email, string Password, UserRole Role);

@@ -23,6 +23,6 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasIndex(e => e.Role).HasDatabaseName("ix_users_role").HasFilter("(is_aktif = true)");
 
         builder.ToTable(t => t.HasCheckConstraint(
-            "ck_users_role", "role IN ('admin', 'pic', 'crew')"));
+            "ck_users_role", "role IN ('admin', 'event_manager', 'crew')"));
     }
 }

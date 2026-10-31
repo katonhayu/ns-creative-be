@@ -13,7 +13,7 @@ namespace NsCreative.Api.Controllers;
 /// Dokumen tetap bisa dikelola setelah event selesai.
 /// </summary>
 [ApiController]
-[Authorize(Roles = Peran.AdminPic)]
+[Authorize(Roles = Peran.Semua)]
 [Route("api")]
 [Produces("application/json")]
 public class DocumentsController(IDocumentService documents) : ControllerBase
@@ -32,6 +32,7 @@ public class DocumentsController(IDocumentService documents) : ControllerBase
 
     /// <summary>Upload dokumen (multipart/form-data). Maksimal 10 MB: pdf, doc, docx, xls, xlsx, jpg, jpeg, png.</summary>
     /// <remarks>Field: file, namaDokumen, jenis, tanggal (opsional, default hari ini), keterangan.</remarks>
+    [Authorize(Roles = Peran.Pengelola)]
     [HttpPost("events/{eventId:guid}/documents")]
     [Consumes("multipart/form-data")]
     [RequestSizeLimit(BatasBody)]
@@ -69,6 +70,7 @@ public class DocumentsController(IDocumentService documents) : ControllerBase
     }
 
     /// <summary>Ubah metadata (nama, jenis, tanggal, keterangan). File tidak diganti.</summary>
+    [Authorize(Roles = Peran.Pengelola)]
     [HttpPut("documents/{id:guid}")]
     [ProducesResponseType<DocumentDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -77,6 +79,7 @@ public class DocumentsController(IDocumentService documents) : ControllerBase
         Ok(await documents.UpdateAsync(id, dto, ct));
 
     /// <summary>Hapus record dan file fisiknya.</summary>
+    [Authorize(Roles = Peran.Pengelola)]
     [HttpDelete("documents/{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]

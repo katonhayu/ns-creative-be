@@ -15,6 +15,9 @@ public interface IEventCrewService
     Task<EventCrewDto> CreateAsync(Guid eventId, CreateEventCrewDto dto, CancellationToken ct = default);
     Task<EventCrewDto> UpdateAsync(Guid eventId, Guid id, UpdateEventCrewDto dto, CancellationToken ct = default);
     Task DeleteAsync(Guid eventId, Guid id, CancellationToken ct = default);
+
+    /// <summary>Crew yang boleh dipilih sebagai PIC task dan sesi rundown: PIC event, lalu crew yang ditugaskan.</summary>
+    Task<IReadOnlyList<PenanggungJawabDto>> GetPenanggungJawabAsync(Guid eventId, CancellationToken ct = default);
 }
 
 /// <summary>
@@ -98,13 +101,50 @@ public class EventCrewService(
         return await GetByIdAsync(eventId, id, ct);
     }
 
+    /// <summary>
+    /// Ditolak jika crew masih menjadi PIC task atau sesi rundown di event ini, karena PIC keduanya
+    /// harus crew yang terlibat. PIC event tetap terlibat walau penugasannya dihapus.
+    /// </summary>
     public async Task DeleteAsync(Guid eventId, Guid id, CancellationToken ct = default)
     {
-        await akses.UbahAsync(eventId, ct);
+        var ev = await akses.UbahAsync(eventId, ct);
         var penugasan = await CariAsync(eventId, id, ct);
+        if (penugasan.CrewId != ev.PicCrewId)
+        {
+            var crewId = penugasan.CrewId;
+            var jumlahTask = await db.Tasks.CountAsync(t => t.EventId == eventId && t.PicCrewId == crewId, ct);
+            var jumlahSesi = await db.Schedules.CountAsync(s => s.EventId == eventId && s.PicCrewId == crewId, ct);
+            if (jumlahTask + jumlahSesi > 0)
+            {
+                var nama = await db.Crews.IgnoreQueryFilters().Where(c => c.Id == crewId).Select(c => c.Nama).FirstAsync(ct);
+                var dipegang = string.Join(" dan ", new[]
+                {
+                    jumlahTask > 0 ? $"{jumlahTask} task" : null,
+                    jumlahSesi > 0 ? $"{jumlahSesi} sesi rundown" : null,
+                }.OfType<string>());
+                throw new BusinessRuleException(
+                    $"{nama} masih menjadi PIC {dipegang} di event ini. Pindahkan PIC-nya terlebih dahulu.");
+            }
+        }
 
         db.EventCrews.Remove(penugasan);
         await db.SaveChangesAsync(ct);
+    }
+
+    public async Task<IReadOnlyList<PenanggungJawabDto>> GetPenanggungJawabAsync(Guid eventId, CancellationToken ct = default)
+    {
+        var ev = await akses.LihatAsync(eventId, ct);
+        var pic = await db.Crews.AsNoTracking()
+            .IgnoreQueryFilters()
+            .Where(c => c.Id == ev.PicCrewId)
+            .Select(c => new PenanggungJawabDto(c.Id, c.Nama, "PIC event", c.UserId != null))
+            .FirstAsync(ct);
+        var ditugaskan = await Penugasan(eventId)
+            .Where(ec => ec.CrewId != ev.PicCrewId)
+            .OrderBy(ec => ec.Crew.Nama)
+            .Select(ec => new PenanggungJawabDto(ec.CrewId, ec.Crew.Nama, ec.Posisi, ec.Crew.UserId != null))
+            .ToListAsync(ct);
+        return [pic, .. ditugaskan];
     }
 
     /// <summary>Filter soft delete diabaikan supaya crew yang sudah dihapus tetap tampil di event lama.</summary>

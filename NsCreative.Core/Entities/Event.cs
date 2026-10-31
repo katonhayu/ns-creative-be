@@ -7,8 +7,9 @@ public class Event : BaseEntity
     public Guid ClientId { get; set; }
     public Client Client { get; set; } = null!;
 
-    public Guid PicUserId { get; set; }
-    public User PicUser { get; set; } = null!;
+    /// <summary>Crew penanggung jawab. Akun yang ditautkan ke crew ini boleh mengelola event.</summary>
+    public Guid PicCrewId { get; set; }
+    public Crew PicCrew { get; set; } = null!;
 
     public string Nama { get; set; } = "";
     public string Jenis { get; set; } = "";

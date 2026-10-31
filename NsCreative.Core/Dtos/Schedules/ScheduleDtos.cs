@@ -11,7 +11,7 @@ public record ScheduleDto(
     TimeOnly? WaktuSelesai,
     string Kegiatan,
     string? Lokasi,
-    Guid? PicUserId,
+    Guid? PicCrewId,
     string? NamaPic,
     bool DiLuarRentangEvent,
     DateTime CreatedAt,
@@ -36,7 +36,7 @@ public interface IScheduleInput
     TimeOnly? WaktuSelesai { get; }
     string Kegiatan { get; }
     string? Lokasi { get; }
-    Guid? PicUserId { get; }
+    Guid? PicCrewId { get; }
 }
 
 public record CreateScheduleDto(
@@ -45,7 +45,7 @@ public record CreateScheduleDto(
     TimeOnly? WaktuSelesai,
     string Kegiatan,
     string? Lokasi,
-    Guid? PicUserId) : IScheduleInput;
+    Guid? PicCrewId) : IScheduleInput;
 
 public record UpdateScheduleDto(
     DateOnly? Tanggal,
@@ -53,4 +53,4 @@ public record UpdateScheduleDto(
     TimeOnly? WaktuSelesai,
     string Kegiatan,
     string? Lokasi,
-    Guid? PicUserId) : IScheduleInput;
+    Guid? PicCrewId) : IScheduleInput;

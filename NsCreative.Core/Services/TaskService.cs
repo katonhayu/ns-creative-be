@@ -22,8 +22,9 @@ public interface ITaskService
 
 /// <summary>
 /// Task persiapan event. Status <c>terlambat</c> tidak pernah disimpan; dihitung saat baca
-/// dari deadline dan dikirim sebagai <c>isTerlambat</c>. Crew hanya melihat dan mengubah
-/// status task yang PIC-nya dirinya.
+/// dari deadline dan dikirim sebagai <c>isTerlambat</c>. Semua yang bisa melihat event bisa
+/// melihat seluruh task-nya; selain admin dan PIC event, crew hanya boleh mengubah status task
+/// yang PIC-nya crew miliknya.
 /// </summary>
 public class TaskService(
     IAppDbContext db,
@@ -44,39 +45,27 @@ public class TaskService(
 
     public const int LintasEventMaks = 500;
 
-    private bool IsCrew => pengguna.Role == UserRole.Crew;
-
     public async Task<PagedResult<TaskDto>> GetListAsync(
         Guid eventId, QueryParams query, TaskFilter filter, CancellationToken ct = default)
     {
-        await akses.LihatAsync(eventId, ct);
+        var ev = await akses.LihatAsync(eventId, ct);
         var hariIni = Waktu.HariIni();
 
         var q = FilterStatus(Tugas(eventId), filter.Status, hariIni);
-        if (IsCrew)
-        {
-            var saya = pengguna.Id;
-            q = q.Where(t => t.PicUserId == saya);
-        }
-        else if (filter.PicUserId is { } picUserId)
-        {
-            q = q.Where(t => t.PicUserId == picUserId);
-        }
+        if (filter.PicCrewId is { } picCrewId) q = q.Where(t => t.PicCrewId == picCrewId);
 
         return await Proyeksi(q
-                .Cari(query.Search, t => t.NamaTugas, t => t.Deskripsi, t => t.PicUser!.Nama)
-                .Urutkan(query, Urutan), hariIni)
+                .Cari(query.Search, t => t.NamaTugas, t => t.Deskripsi, t => t.PicCrew!.Nama)
+                .Urutkan(query, Urutan), hariIni, ev.BolehKelola, null)
             .ToPagedResultAsync(query, ct);
     }
 
     public async Task<TaskDto> GetByIdAsync(Guid eventId, Guid id, CancellationToken ct = default)
     {
-        await akses.LihatAsync(eventId, ct);
-        var task = await Proyeksi(Tugas(eventId).Where(t => t.Id == id), Waktu.HariIni()).FirstOrDefaultAsync(ct)
+        var ev = await akses.LihatAsync(eventId, ct);
+        return await Proyeksi(Tugas(eventId).Where(t => t.Id == id), Waktu.HariIni(), ev.BolehKelola, null)
+                .FirstOrDefaultAsync(ct)
             ?? throw new NotFoundException("Task tidak ditemukan.");
-        if (IsCrew && task.PicUserId != pengguna.Id)
-            throw new ForbiddenException("Anda hanya bisa melihat task milik Anda sendiri.");
-        return task;
     }
 
     /// <summary>
@@ -90,28 +79,32 @@ public class TaskService(
         var q = db.Tasks.AsNoTracking()
             .Where(t => terlihat.Any(e => e.Id == t.EventId) && t.Event.Status != EventStatus.Dibatalkan);
         if (filter.EventId is { } eventId) q = q.Where(t => t.EventId == eventId);
-        if (filter.MilikSaya || IsCrew)
+        if (filter.MilikSaya)
         {
             var saya = pengguna.Id;
-            q = q.Where(t => t.PicUserId == saya);
+            q = q.Where(t => t.PicCrew != null && t.PicCrew.UserId == saya);
         }
 
+        var (semua, crewSaya) = await HakKelolaAsync(ct);
         return await Proyeksi(FilterStatus(q, filter.Status, hariIni)
                 .OrderBy(t => t.Deadline == null)
                 .ThenBy(t => t.Deadline)
                 .ThenBy(t => t.NamaTugas)
-                .Take(LintasEventMaks), hariIni)
+                .Take(LintasEventMaks), hariIni, semua, crewSaya)
             .ToListAsync(ct);
     }
 
-    /// <summary>Task milik pengguna login di semua event (kecuali event dibatalkan), urut deadline.</summary>
+    /// <summary>
+    /// Task yang PIC-nya crew milik pengguna login, di semua event (kecuali event dibatalkan),
+    /// urut deadline. Kosong untuk akun yang tidak ditautkan ke data crew.
+    /// </summary>
     public async Task<PagedResult<MyTaskDto>> GetMineAsync(
         QueryParams query, TaskItemStatus? status, CancellationToken ct = default)
     {
         var hariIni = Waktu.HariIni();
         var saya = pengguna.Id;
         var q = db.Tasks.AsNoTracking()
-            .Where(t => t.PicUserId == saya && t.Event.Status != EventStatus.Dibatalkan);
+            .Where(t => t.PicCrew != null && t.PicCrew.UserId == saya && t.Event.Status != EventStatus.Dibatalkan);
 
         return await FilterStatus(q, status, hariIni)
             .Cari(query.Search, t => t.NamaTugas, t => t.Event.Nama)
@@ -127,8 +120,8 @@ public class TaskService(
     public async Task<TaskDto> CreateAsync(Guid eventId, CreateTaskDto dto, CancellationToken ct = default)
     {
         await createValidator.ValidateAndThrowAsync(dto, ct);
-        await akses.UbahAsync(eventId, ct);
-        await akses.CekPenanggungJawabAsync([dto.PicUserId], ct);
+        var ev = await akses.UbahAsync(eventId, ct);
+        await akses.CekPenanggungJawabAsync(ev, [dto.PicCrewId], ct);
 
         var task = new TaskItem { EventId = eventId, Status = TaskItemStatus.Belum };
         Terapkan(task, dto);
@@ -141,10 +134,10 @@ public class TaskService(
     public async Task<TaskDto> UpdateAsync(Guid eventId, Guid id, UpdateTaskDto dto, CancellationToken ct = default)
     {
         await updateValidator.ValidateAndThrowAsync(dto, ct);
-        await akses.UbahAsync(eventId, ct);
+        var ev = await akses.UbahAsync(eventId, ct);
         var task = await CariAsync(eventId, id, ct);
-        // Dicek hanya jika berubah, supaya task dengan PIC yang kini nonaktif tetap bisa diedit.
-        if (dto.PicUserId != task.PicUserId) await akses.CekPenanggungJawabAsync([dto.PicUserId], ct);
+        // Dicek hanya jika berubah, supaya task lama tetap bisa diedit walau PIC-nya sudah tidak ditugaskan.
+        if (dto.PicCrewId != task.PicCrewId) await akses.CekPenanggungJawabAsync(ev, [dto.PicCrewId], ct);
 
         Terapkan(task, dto);
         await db.SaveChangesAsync(ct);
@@ -152,14 +145,25 @@ public class TaskService(
         return await GetByIdAsync(eventId, id, ct);
     }
 
-    /// <summary>Crew boleh memanggil ini, tapi hanya untuk task yang PIC-nya dirinya.</summary>
+    /// <summary>
+    /// Admin dan PIC event boleh mengubah status task apa pun. Crew lain yang terlibat di event
+    /// hanya boleh mengubah status task yang PIC-nya crew miliknya.
+    /// </summary>
     public async Task<TaskDto> UpdateStatusAsync(Guid eventId, Guid id, UpdateTaskStatusDto dto, CancellationToken ct = default)
     {
         await statusValidator.ValidateAndThrowAsync(dto, ct);
-        await akses.UbahAsync(eventId, ct);
+        var ev = await akses.LihatAsync(eventId, ct);
         var task = await CariAsync(eventId, id, ct);
-        if (IsCrew && task.PicUserId != pengguna.Id)
-            throw new ForbiddenException("Anda hanya bisa mengubah status task milik Anda sendiri.");
+        if (!ev.BolehKelola)
+        {
+            var saya = pengguna.Id;
+            var milikSaya = task.PicCrewId is { } picCrewId
+                && pengguna.Role == UserRole.Crew
+                && await db.Crews.AnyAsync(c => c.Id == picCrewId && c.UserId == saya, ct);
+            if (!milikSaya)
+                throw new ForbiddenException("Anda hanya bisa mengubah status task milik Anda sendiri.");
+        }
+        ev.CekBelumTerkunci();
 
         task.Status = dto.Status!.Value;
         await db.SaveChangesAsync(ct);
@@ -187,13 +191,32 @@ public class TaskService(
             var s => q.Where(t => t.Status == s),
         };
 
-    private static IQueryable<TaskDto> Proyeksi(IQueryable<TaskItem> q, DateOnly hariIni) =>
+    /// <param name="kelolaSemua">Pengguna boleh mengelola event semua task di <paramref name="q"/>.</param>
+    /// <param name="crewSaya">Crew milik pengguna; task di event yang PIC-nya crew ini juga boleh dikelola.</param>
+    private static IQueryable<TaskDto> Proyeksi(
+        IQueryable<TaskItem> q, DateOnly hariIni, bool kelolaSemua, Guid? crewSaya) =>
         q.Select(t => new TaskDto(
             t.Id, t.EventId, t.Event.Nama, t.NamaTugas, t.Deskripsi, t.Deadline, t.Status,
             // Tanpa pengecekan null, perbandingan dengan deadline kosong menghasilkan NULL di SQL.
             t.Status != TaskItemStatus.Selesai && t.Deadline != null && t.Deadline < hariIni,
-            t.Catatan, t.PicUserId, t.PicUser != null ? t.PicUser.Nama : null,
+            t.Catatan, t.PicCrewId, t.PicCrew != null ? t.PicCrew.Nama : null,
+            kelolaSemua || (crewSaya != null && t.Event.PicCrewId == crewSaya),
             t.CreatedAt, t.UpdatedAt));
+
+    /// <summary>Untuk daftar lintas event: admin mengelola semua; crew mengelola event yang PIC-nya crew miliknya.</summary>
+    private async Task<(bool Semua, Guid? CrewSaya)> HakKelolaAsync(CancellationToken ct)
+    {
+        if (pengguna.Role == UserRole.Admin) return (true, null);
+        if (pengguna.Role != UserRole.Crew) return (false, null);
+
+        var saya = pengguna.Id;
+        var crewSaya = await db.Crews.AsNoTracking()
+            .IgnoreQueryFilters()
+            .Where(c => c.UserId == saya)
+            .Select(c => (Guid?)c.Id)
+            .FirstOrDefaultAsync(ct);
+        return (false, crewSaya);
+    }
 
     private async Task<TaskItem> CariAsync(Guid eventId, Guid id, CancellationToken ct) =>
         await db.Tasks.FirstOrDefaultAsync(t => t.Id == id && t.EventId == eventId, ct)
@@ -205,6 +228,6 @@ public class TaskService(
         task.Deskripsi = Teks.Bersihkan(dto.Deskripsi);
         task.Deadline = dto.Deadline;
         task.Catatan = Teks.Bersihkan(dto.Catatan);
-        task.PicUserId = dto.PicUserId;
+        task.PicCrewId = dto.PicCrewId;
     }
 }

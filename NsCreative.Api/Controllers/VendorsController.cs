@@ -9,13 +9,14 @@ namespace NsCreative.Api.Controllers;
 
 /// <summary>Master data vendor. Error ditangani ExceptionHandlingMiddleware.</summary>
 [ApiController]
-[Authorize(Roles = Peran.AdminPic)]
+[Authorize(Roles = Peran.Semua)]
 [Route("api/vendors")]
 [Produces("application/json")]
 public class VendorsController(IVendorService vendors) : ControllerBase
 {
     /// <summary>Daftar vendor berpaginasi. Pencarian pada nama, jenis jasa, dan contact person.</summary>
     /// <remarks>sortBy: nama (default), jenisJasa, createdAt. Filter <c>jenisJasa</c> harus sama persis.</remarks>
+    [Authorize(Roles = Peran.Pemantau)]
     [HttpGet]
     [ProducesResponseType<PagedResult<VendorListDto>>(StatusCodes.Status200OK)]
     public async Task<ActionResult<PagedResult<VendorListDto>>> GetList(
@@ -29,6 +30,7 @@ public class VendorsController(IVendorService vendors) : ControllerBase
         [FromQuery] string? search, [FromQuery] string? jenisJasa, CancellationToken ct) =>
         Ok(await vendors.GetLookupAsync(search, jenisJasa, ct));
 
+    [Authorize(Roles = Peran.Pemantau)]
     [HttpGet("{id:guid}")]
     [ProducesResponseType<VendorDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
@@ -39,6 +41,7 @@ public class VendorsController(IVendorService vendors) : ControllerBase
     /// Riwayat transaksi vendor per event (berpaginasi) beserta total seluruh transaksi.
     /// Event yang dibatalkan tidak ikut dihitung dalam total.
     /// </summary>
+    [Authorize(Roles = Peran.Pemantau)]
     [HttpGet("{id:guid}/events")]
     [ProducesResponseType<VendorRiwayatDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
@@ -60,6 +63,7 @@ public class VendorsController(IVendorService vendors) : ControllerBase
         CancellationToken ct) =>
         Ok(await vendors.GetConflictsAsync(id, tanggalMulai, tanggalSelesai, kecualiEventId, ct));
 
+    [Authorize(Roles = Peran.Admin)]
     [HttpPost]
     [ProducesResponseType<VendorDto>(StatusCodes.Status201Created)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -69,6 +73,7 @@ public class VendorsController(IVendorService vendors) : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = hasil.Id }, hasil);
     }
 
+    [Authorize(Roles = Peran.Admin)]
     [HttpPut("{id:guid}")]
     [ProducesResponseType<VendorDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]

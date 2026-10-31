@@ -12,7 +12,7 @@ namespace NsCreative.Api.Controllers;
 /// Semua perubahan ditolak 422 jika event sudah selesai atau dibatalkan.
 /// </summary>
 [ApiController]
-[Authorize(Roles = Peran.AdminPic)]
+[Authorize(Roles = Peran.Semua)]
 [Route("api/events/{eventId:guid}/talents")]
 [Produces("application/json")]
 public class EventTalentsController(IEventTalentService talents) : ControllerBase
@@ -34,6 +34,7 @@ public class EventTalentsController(IEventTalentService talents) : ControllerBas
 
     /// <summary>⚡ Tugaskan talent. Baris budget kategori Talent (estimasi = fee deal) dibuat otomatis.</summary>
     /// <remarks><c>jadwalTampil</c> tanpa zona waktu dianggap WIB. Status opsional, default <c>dihubungi</c>.</remarks>
+    [Authorize(Roles = Peran.Pengelola)]
     [HttpPost]
     [ProducesResponseType<EventTalentDto>(StatusCodes.Status201Created)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -46,6 +47,7 @@ public class EventTalentsController(IEventTalentService talents) : ControllerBas
     }
 
     /// <summary>⚡ Ubah detail penugasan. Estimasi budget ikut fee deal; biaya aktual tidak diubah.</summary>
+    [Authorize(Roles = Peran.Pengelola)]
     [HttpPut("{id:guid}")]
     [ProducesResponseType<EventTalentDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -56,6 +58,7 @@ public class EventTalentsController(IEventTalentService talents) : ControllerBas
         Ok(await talents.UpdateAsync(eventId, id, dto, ct));
 
     /// <summary>Ubah status penugasan: dihubungi, deal, kontrak, selesai, batal.</summary>
+    [Authorize(Roles = Peran.Pengelola)]
     [HttpPatch("{id:guid}/status")]
     [ProducesResponseType<EventTalentDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -66,6 +69,7 @@ public class EventTalentsController(IEventTalentService talents) : ControllerBas
         Ok(await talents.UpdateStatusAsync(eventId, id, dto, ct));
 
     /// <summary>⚡ Hapus penugasan beserta budget terkait. Ditolak 422 jika biaya aktual sudah dicatat.</summary>
+    [Authorize(Roles = Peran.Pengelola)]
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]

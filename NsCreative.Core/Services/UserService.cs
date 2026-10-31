@@ -46,7 +46,7 @@ public class UserService(
             .Urutkan(query, Urutan)
             .Select(u => new UserListDto(
                 u.Id, u.Nama, u.Email, u.Role, u.IsAktif,
-                db.Events.Count(e => e.PicUserId == u.Id)))
+                db.Events.Count(e => e.PicCrew.UserId == u.Id)))
             .ToPagedResultAsync(query, ct);
     }
 
@@ -55,7 +55,7 @@ public class UserService(
             .Where(u => u.Id == id)
             .Select(u => new UserDto(
                 u.Id, u.Nama, u.Email, u.Role, u.IsAktif,
-                db.Events.Count(e => e.PicUserId == u.Id),
+                db.Events.Count(e => e.PicCrew.UserId == u.Id),
                 u.CreatedAt, u.UpdatedAt))
             .FirstOrDefaultAsync(ct)
         ?? throw new NotFoundException("Pengguna tidak ditemukan.");
@@ -138,9 +138,10 @@ public class UserService(
     }
 
     /// <summary>
-    /// Hapus permanen (tabel users tidak punya soft delete). Ditolak jika pengguna masih
-    /// tercatat sebagai PIC event, karena riwayat event harus tetap utuh; nonaktifkan saja.
-    /// Task, sesi rundown, dan tautan crew miliknya dilepas otomatis oleh database (SET NULL).
+    /// Hapus permanen (tabel users tidak punya soft delete). PIC event, task, dan rundown tercatat
+    /// pada data crew, jadi riwayat tetap utuh; tautan crew ke akun ini dilepas oleh database
+    /// (SET NULL). Ditolak jika crew miliknya masih PIC event aktif, karena event itu akan
+    /// kehilangan pengelolanya.
     /// </summary>
     public async Task DeleteAsync(Guid id, CancellationToken ct = default)
     {
@@ -148,17 +149,11 @@ public class UserService(
         if (id == pengguna.Id)
             throw new BusinessRuleException("Anda tidak bisa menghapus akun sendiri.");
 
-        var jumlahAktif = await db.Events.CountAsync(
-            e => e.PicUserId == id && EventStatusExtensions.Aktif.Contains(e.Status), ct);
+        var jumlahAktif = await db.Events.IgnoreQueryFilters().CountAsync(
+            e => e.PicCrew.UserId == id && EventStatusExtensions.Aktif.Contains(e.Status), ct);
         if (jumlahAktif > 0)
             throw new BusinessRuleException(
                 $"{user.Nama} masih menjadi PIC {jumlahAktif} event aktif. Pindahkan PIC-nya terlebih dahulu.");
-
-        var jumlahRiwayat = await db.Events.CountAsync(e => e.PicUserId == id, ct);
-        if (jumlahRiwayat > 0)
-            throw new BusinessRuleException(
-                $"{user.Nama} tercatat sebagai PIC di {jumlahRiwayat} event lama. " +
-                "Nonaktifkan akunnya supaya riwayat event tetap utuh.");
 
         db.Users.Remove(user);
         await db.SaveChangesAsync(ct);

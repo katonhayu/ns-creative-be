@@ -10,14 +10,13 @@ namespace NsCreative.Api.Controllers;
 
 /// <summary>Akun pengguna (khusus admin, kecuali lookup untuk admin dan pic). Error ditangani ExceptionHandlingMiddleware.</summary>
 [ApiController]
-[Authorize(Roles = Peran.AdminPic)]
+[Authorize(Roles = Peran.Pemantau)]
 [Route("api/users")]
 [Produces("application/json")]
 public class UsersController(IUserService users) : ControllerBase
 {
     /// <summary>Daftar pengguna berpaginasi. Pencarian pada nama dan email.</summary>
     /// <remarks>sortBy: nama (default), email, role, createdAt. Filter: role (admin/pic/crew), isAktif.</remarks>
-    [Authorize(Roles = Peran.Admin)]
     [HttpGet]
     [ProducesResponseType<PagedResult<UserListDto>>(StatusCodes.Status200OK)]
     public async Task<ActionResult<PagedResult<UserListDto>>> GetList(
@@ -32,7 +31,6 @@ public class UsersController(IUserService users) : ControllerBase
         [FromQuery] string? search, [FromQuery] UserRole[]? role, CancellationToken ct) =>
         Ok(await users.GetLookupAsync(search, role, ct));
 
-    [Authorize(Roles = Peran.Admin)]
     [HttpGet("{id:guid}")]
     [ProducesResponseType<UserDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]

@@ -9,13 +9,14 @@ namespace NsCreative.Api.Controllers;
 
 /// <summary>Master data client. Error ditangani ExceptionHandlingMiddleware.</summary>
 [ApiController]
-[Authorize(Roles = Peran.AdminPic)]
+[Authorize(Roles = Peran.Semua)]
 [Route("api/clients")]
 [Produces("application/json")]
 public class ClientsController(IClientService clients) : ControllerBase
 {
     /// <summary>Daftar client berpaginasi. Pencarian pada nama dan perusahaan.</summary>
     /// <remarks>sortBy: nama (default), perusahaan, createdAt. sortDir: asc (default), desc.</remarks>
+    [Authorize(Roles = Peran.Pemantau)]
     [HttpGet]
     [ProducesResponseType<PagedResult<ClientListDto>>(StatusCodes.Status200OK)]
     public async Task<ActionResult<PagedResult<ClientListDto>>> GetList([FromQuery] QueryParams query, CancellationToken ct) =>
@@ -27,6 +28,7 @@ public class ClientsController(IClientService clients) : ControllerBase
     public async Task<ActionResult<IReadOnlyList<ClientLookupDto>>> GetLookup([FromQuery] string? search, CancellationToken ct) =>
         Ok(await clients.GetLookupAsync(search, ct));
 
+    [Authorize(Roles = Peran.Pemantau)]
     [HttpGet("{id:guid}")]
     [ProducesResponseType<ClientDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
@@ -34,6 +36,7 @@ public class ClientsController(IClientService clients) : ControllerBase
         Ok(await clients.GetByIdAsync(id, ct));
 
     /// <summary>Riwayat event client, terbaru lebih dulu. Tetap bisa dibuka walau client sudah dihapus.</summary>
+    [Authorize(Roles = Peran.Pemantau)]
     [HttpGet("{id:guid}/events")]
     [ProducesResponseType<PagedResult<ClientEventDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
@@ -41,6 +44,7 @@ public class ClientsController(IClientService clients) : ControllerBase
         Guid id, [FromQuery] QueryParams query, CancellationToken ct) =>
         Ok(await clients.GetEventsAsync(id, query, ct));
 
+    [Authorize(Roles = Peran.Admin)]
     [HttpPost]
     [ProducesResponseType<ClientDto>(StatusCodes.Status201Created)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -50,6 +54,7 @@ public class ClientsController(IClientService clients) : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = hasil.Id }, hasil);
     }
 
+    [Authorize(Roles = Peran.Admin)]
     [HttpPut("{id:guid}")]
     [ProducesResponseType<ClientDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]

@@ -19,9 +19,9 @@ public abstract class ScheduleInputValidator<T> : AbstractValidator<T> where T :
             .When(x => x.WaktuSelesai.HasValue && x.WaktuMulai.HasValue);
         RuleFor(x => x.Kegiatan).Wajib("Kegiatan", 200);
         RuleFor(x => x.Lokasi).Maksimal("Lokasi", 200);
-        RuleFor(x => x.PicUserId)
+        RuleFor(x => x.PicCrewId)
             .Must(id => id != Guid.Empty).WithMessage("PIC tidak valid.")
-            .When(x => x.PicUserId.HasValue);
+            .When(x => x.PicCrewId.HasValue);
     }
 }
 

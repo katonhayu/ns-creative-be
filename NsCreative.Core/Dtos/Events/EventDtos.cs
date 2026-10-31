@@ -3,6 +3,8 @@ using NsCreative.Core.Enums;
 namespace NsCreative.Core.Dtos.Events;
 
 /// <param name="Deskripsi">Ikut dikirim supaya form edit dari halaman daftar tidak mengosongkannya.</param>
+/// <param name="PicCrewId">Crew penanggung jawab event.</param>
+/// <param name="BolehKelola">Pengguna login boleh mengubah event ini (admin, atau crew yang menjadi PIC-nya).</param>
 public record EventListDto(
     Guid Id,
     string Nama,
@@ -15,11 +17,17 @@ public record EventListDto(
     Guid ClientId,
     string NamaClient,
     string? PerusahaanClient,
-    Guid PicUserId,
-    string NamaPic);
+    Guid PicCrewId,
+    string NamaPic,
+    bool BolehKelola);
 
 /// <summary>Detail event beserta kontak client dan PIC.</summary>
 /// <param name="StatusBerikutnya">Status yang boleh dipilih lewat PATCH status. Kosong untuk selesai/dibatalkan.</param>
+/// <param name="EmailPic">Email akun login crew PIC. Null jika tautan akunnya sudah dilepas.</param>
+/// <param name="BolehKelola">
+/// Pengguna login boleh mengubah event ini dan data di bawahnya (admin, atau crew yang menjadi PIC-nya).
+/// False berarti hanya bisa melihat, kecuali mengubah status task miliknya sendiri.
+/// </param>
 public record EventDto(
     Guid Id,
     string Nama,
@@ -35,9 +43,11 @@ public record EventDto(
     string? PerusahaanClient,
     string? TeleponClient,
     string? EmailClient,
-    Guid PicUserId,
+    Guid PicCrewId,
     string NamaPic,
-    string EmailPic,
+    string? TeleponPic,
+    string? EmailPic,
+    bool BolehKelola,
     DateTime CreatedAt,
     DateTime UpdatedAt);
 
@@ -54,7 +64,7 @@ public class EventFilter
 {
     public EventStatus? Status { get; set; }
     public Guid? ClientId { get; set; }
-    public Guid? PicUserId { get; set; }
+    public Guid? PicCrewId { get; set; }
 
     /// <summary>Awal rentang. Event yang sebagian harinya beririsan dengan rentang ikut tampil.</summary>
     public DateOnly? DariTanggal { get; set; }
@@ -91,7 +101,12 @@ public record RingkasanBudgetDto(
 public interface IEventInput
 {
     Guid ClientId { get; }
-    Guid PicUserId { get; }
+
+    /// <summary>
+    /// Crew PIC. Saat crew membuat event, boleh kosong karena otomatis diisi crew miliknya.
+    /// Admin wajib mengisinya saat membuat. Saat update, kosong berarti PIC tidak diubah.
+    /// </summary>
+    Guid? PicCrewId { get; }
     string Nama { get; }
     string Jenis { get; }
     DateOnly TanggalMulai { get; }
@@ -103,7 +118,7 @@ public interface IEventInput
 /// <summary>Status awal selalu draft.</summary>
 public record CreateEventDto(
     Guid ClientId,
-    Guid PicUserId,
+    Guid? PicCrewId,
     string Nama,
     string Jenis,
     DateOnly TanggalMulai,
@@ -111,10 +126,10 @@ public record CreateEventDto(
     string? Lokasi,
     string? Deskripsi) : IEventInput;
 
-/// <summary>Status tidak bisa diubah lewat sini; pakai PATCH status.</summary>
+/// <summary>Status tidak bisa diubah lewat sini; pakai PATCH status. Hanya admin yang boleh mengganti PIC.</summary>
 public record UpdateEventDto(
     Guid ClientId,
-    Guid PicUserId,
+    Guid? PicCrewId,
     string Nama,
     string Jenis,
     DateOnly TanggalMulai,

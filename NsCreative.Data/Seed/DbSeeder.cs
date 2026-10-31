@@ -37,8 +37,9 @@ public static class DbSeeder
         await TambahYangBelumAda(db.Users, ct,
         [
             Akun(1, "Rizal Pratama", "rizal@nscreative.id", UserRole.Admin),
-            Akun(2, "Dewi Lestari", "dewi@nscreative.id", UserRole.Pic),
-            Akun(3, "Fitri Handayani", "fitri@nscreative.id", UserRole.Pic),
+            Akun(2, "Dewi Lestari", "dewi@nscreative.id", UserRole.Crew),
+            Akun(3, "Fitri Handayani", "fitri@nscreative.id", UserRole.Crew),
+            Akun(4, "Hendra Gunawan", "hendra@nscreative.id", UserRole.EventManager),
         ]);
 
         await TambahYangBelumAda(db.Clients, ct,
@@ -126,20 +127,38 @@ public static class DbSeeder
             },
         ]);
 
+        // Dewi dan Fitri memegang event contoh, jadi data crew-nya ditautkan ke akun login.
+        // Database lama yang dimigrasikan dari peran pic sudah punya crew untuk akun ini
+        // (dibuat migration RemovePicRole), jadi crew bertaut akun dilewati jika akunnya sudah dipakai.
+        var akunBertaut = await db.Crews.IgnoreQueryFilters()
+            .Where(c => c.UserId != null)
+            .Select(c => c.UserId)
+            .ToListAsync(ct);
         await TambahYangBelumAda(db.Crews, ct,
-        [
-            new Crew { Id = CrewId(1), Nama = "Bagas Saputra", Telepon = "0812-7777-8888", Keahlian = "Stage Manager" },
-            new Crew { Id = CrewId(2), Nama = "Yoga Permana", Telepon = "0813-0999-0000", Keahlian = "Lighting" },
-            new Crew { Id = CrewId(3), Nama = "Fajar Nugraha", Telepon = "0821-4455-6677", Keahlian = "Sound Engineer" },
-            new Crew { Id = CrewId(4), Nama = "Tika Maharani", Telepon = "0822-5566-7788", Keahlian = "Liaison Officer" },
-            new Crew { Id = CrewId(5), Nama = "Sinta Ayu Lestari", Telepon = "0896-3434-5656", Keahlian = "Registrasi & Usher" },
-        ]);
+        new Crew[]
+        {
+            new() { Id = CrewId(1), Nama = "Bagas Saputra", Telepon = "0812-7777-8888", Keahlian = "Stage Manager" },
+            new() { Id = CrewId(2), Nama = "Yoga Permana", Telepon = "0813-0999-0000", Keahlian = "Lighting" },
+            new() { Id = CrewId(3), Nama = "Fajar Nugraha", Telepon = "0821-4455-6677", Keahlian = "Sound Engineer" },
+            new() { Id = CrewId(4), Nama = "Tika Maharani", Telepon = "0822-5566-7788", Keahlian = "Liaison Officer" },
+            new() { Id = CrewId(5), Nama = "Sinta Ayu Lestari", Telepon = "0896-3434-5656", Keahlian = "Registrasi & Usher" },
+            new()
+            {
+                Id = CrewId(6), UserId = UserId(2), Nama = "Dewi Lestari", Telepon = "0812-3030-4040",
+                Keahlian = "Project Manager",
+            },
+            new()
+            {
+                Id = CrewId(7), UserId = UserId(3), Nama = "Fitri Handayani", Telepon = "0813-5050-6060",
+                Keahlian = "Event Coordinator",
+            },
+        }.Where(c => c.UserId is null || !akunBertaut.Contains(c.UserId)).ToList());
 
         await TambahYangBelumAda(db.Events, ct,
         [
             new Event
             {
-                Id = EventId(1), ClientId = ClientId(1), PicUserId = UserId(2),
+                Id = EventId(1), ClientId = ClientId(1), PicCrewId = CrewId(6),
                 Nama = "Annual Meeting PT Nusantara Digital Solusi 2026", Jenis = "Corporate Event",
                 TanggalMulai = new DateOnly(2026, 12, 18), TanggalSelesai = new DateOnly(2026, 12, 18),
                 Lokasi = "Grand Ballroom Hotel Parahyangan Permai, Bandung",
@@ -148,7 +167,7 @@ public static class DbSeeder
             },
             new Event
             {
-                Id = EventId(2), ClientId = ClientId(2), PicUserId = UserId(3),
+                Id = EventId(2), ClientId = ClientId(2), PicCrewId = CrewId(7),
                 Nama = "Family Gathering Bank Mitra Parahyangan", Jenis = "Gathering",
                 TanggalMulai = new DateOnly(2026, 11, 20), TanggalSelesai = new DateOnly(2026, 11, 22),
                 Lokasi = "Grafika Cikole, Lembang",

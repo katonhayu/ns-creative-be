@@ -35,7 +35,7 @@ public class ScheduleService(
 
     private static readonly Expression<Func<Schedule, ScheduleDto>> KeDto = s => new ScheduleDto(
         s.Id, s.EventId, s.Event.Nama, s.Tanggal, s.WaktuMulai, s.WaktuSelesai, s.Kegiatan, s.Lokasi,
-        s.PicUserId, s.PicUser != null ? s.PicUser.Nama : null,
+        s.PicCrewId, s.PicCrew != null ? s.PicCrew.Nama : null,
         s.Tanggal < s.Event.TanggalMulai || s.Tanggal > (s.Event.TanggalSelesai ?? s.Event.TanggalMulai),
         s.CreatedAt, s.UpdatedAt);
 
@@ -61,8 +61,8 @@ public class ScheduleService(
     }
 
     /// <summary>
-    /// Jadwal semua event yang terlihat oleh pengguna (pic: event miliknya, crew: event tempat
-    /// ia bertugas), urut tanggal dan jam. Rentang tanggal opsional. Hasil dibatasi
+    /// Jadwal semua event yang terlihat oleh pengguna (crew: event yang ia pegang atau tempat
+    /// ia ditugaskan), urut tanggal dan jam. Rentang tanggal opsional. Hasil dibatasi
     /// <see cref="LintasEventMaks"/> sesi dengan tanggal terbaru, supaya pilihan "Semua"
     /// tetap ringan walau riwayat bertambah.
     /// </summary>
@@ -102,8 +102,8 @@ public class ScheduleService(
     public async Task<ScheduleDto> CreateAsync(Guid eventId, CreateScheduleDto dto, CancellationToken ct = default)
     {
         await createValidator.ValidateAndThrowAsync(dto, ct);
-        await akses.UbahAsync(eventId, ct);
-        await akses.CekPenanggungJawabAsync([dto.PicUserId], ct);
+        var ev = await akses.UbahAsync(eventId, ct);
+        await akses.CekPenanggungJawabAsync(ev, [dto.PicCrewId], ct);
 
         var sesi = new Schedule { EventId = eventId };
         Terapkan(sesi, dto);
@@ -139,8 +139,8 @@ public class ScheduleService(
         }
         if (gagal.Count > 0) throw new ValidationException(gagal);
 
-        await akses.UbahAsync(eventId, ct);
-        await akses.CekPenanggungJawabAsync(daftar.Select(d => d.PicUserId), ct);
+        var ev = await akses.UbahAsync(eventId, ct);
+        await akses.CekPenanggungJawabAsync(ev, daftar.Select(d => d.PicCrewId), ct);
 
         var semua = daftar.Select(dto =>
         {
@@ -166,10 +166,10 @@ public class ScheduleService(
     public async Task<ScheduleDto> UpdateAsync(Guid eventId, Guid id, UpdateScheduleDto dto, CancellationToken ct = default)
     {
         await updateValidator.ValidateAndThrowAsync(dto, ct);
-        await akses.UbahAsync(eventId, ct);
+        var ev = await akses.UbahAsync(eventId, ct);
         var sesi = await CariAsync(eventId, id, ct);
-        // Dicek hanya jika berubah, supaya sesi dengan PIC yang kini nonaktif tetap bisa diedit.
-        if (dto.PicUserId != sesi.PicUserId) await akses.CekPenanggungJawabAsync([dto.PicUserId], ct);
+        // Dicek hanya jika berubah, supaya sesi lama tetap bisa diedit walau PIC-nya sudah tidak ditugaskan.
+        if (dto.PicCrewId != sesi.PicCrewId) await akses.CekPenanggungJawabAsync(ev, [dto.PicCrewId], ct);
 
         Terapkan(sesi, dto);
         await db.SaveChangesAsync(ct);
@@ -200,6 +200,6 @@ public class ScheduleService(
         sesi.WaktuSelesai = dto.WaktuSelesai;
         sesi.Kegiatan = Teks.Wajib(dto.Kegiatan);
         sesi.Lokasi = Teks.Bersihkan(dto.Lokasi);
-        sesi.PicUserId = dto.PicUserId;
+        sesi.PicCrewId = dto.PicCrewId;
     }
 }

@@ -12,7 +12,10 @@ public abstract class EventInputValidator<T> : AbstractValidator<T> where T : IE
     protected EventInputValidator()
     {
         RuleFor(x => x.ClientId).NotEqual(Guid.Empty).WithMessage("Client harus dipilih.");
-        RuleFor(x => x.PicUserId).NotEqual(Guid.Empty).WithMessage("PIC harus dipilih.");
+        // Wajib atau tidaknya bergantung peran pembuat, jadi dicek di service.
+        RuleFor(x => x.PicCrewId)
+            .Must(id => id != Guid.Empty).WithMessage("PIC tidak valid.")
+            .When(x => x.PicCrewId.HasValue);
         RuleFor(x => x.Nama).Wajib("Nama event", 150);
         RuleFor(x => x.Jenis).Wajib("Jenis event", 50);
         RuleFor(x => x.TanggalMulai).NotEqual(default(DateOnly)).WithMessage("Tanggal mulai harus diisi.");

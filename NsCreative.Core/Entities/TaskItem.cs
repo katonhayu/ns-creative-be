@@ -8,8 +8,9 @@ public class TaskItem : BaseEntity
     public Guid EventId { get; set; }
     public Event Event { get; set; } = null!;
 
-    public Guid? PicUserId { get; set; }
-    public User? PicUser { get; set; }
+    /// <summary>Crew yang terlibat di event: PIC event atau crew yang ditugaskan.</summary>
+    public Guid? PicCrewId { get; set; }
+    public Crew? PicCrew { get; set; }
 
     public string NamaTugas { get; set; } = "";
     public string? Deskripsi { get; set; }

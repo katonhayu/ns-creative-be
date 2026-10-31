@@ -9,9 +9,9 @@ public abstract class TaskInputValidator<T> : AbstractValidator<T> where T : ITa
     protected TaskInputValidator()
     {
         RuleFor(x => x.NamaTugas).Wajib("Nama tugas", 150);
-        RuleFor(x => x.PicUserId)
+        RuleFor(x => x.PicCrewId)
             .Must(id => id != Guid.Empty).WithMessage("PIC tidak valid.")
-            .When(x => x.PicUserId.HasValue);
+            .When(x => x.PicCrewId.HasValue);
     }
 }
 
