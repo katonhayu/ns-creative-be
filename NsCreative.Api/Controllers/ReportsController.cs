@@ -31,6 +31,38 @@ public class ReportsController(IReportService reports) : ControllerBase
     public async Task<ActionResult<IReadOnlyList<LaporanEventDto>>> GetEventSelesai(
         [FromQuery] int? tahun, CancellationToken ct) =>
         Ok(await reports.GetEventSelesaiAsync(tahun, ct));
+    /// <summary>PDF rekap event selesai pada satu periode (landscape A4).</summary>
+    /// <summary>PDF rekap event selesai sesuai filter halaman Laporan (landscape A4).</summary>
+    /// <remarks>
+    /// Filter opsional: <c>dariTanggal</c> dan <c>sampaiTanggal</c> ("2026-01-01", inklusif, dicocokkan dengan
+    /// tanggal selesai event), <c>sudahDibuat</c> (true/false), <c>search</c> (nama event atau client).
+    /// Crew hanya mendapat event yang ia pegang atau tempat ia ditugaskan.
+    /// </remarks>
+    [HttpGet("reports/rekap/pdf")]
+    [Produces("application/pdf", "application/json")]
+    [ProducesResponseType<FileContentResult>(StatusCodes.Status200OK, "application/pdf")]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetRekapPdf([FromQuery] RekapLaporanFilter filter, CancellationToken ct)
+    {
+        var file = await reports.PdfRekapAsync(filter, ct);
+        return File(file.Isi, "application/pdf", file.NamaFile);
+    }
+
+    /// <summary>PDF laporan pertanggungjawaban event (A4). 404 jika laporan belum dibuat.</summary>
+    /// <remarks>
+    /// Isi: data event, hasil pelaksanaan, ringkasan dan rincian anggaran, talent, vendor, crew,
+    /// rundown, ringkasan task, kendala, evaluasi, daftar dokumen, dan kolom tanda tangan.
+    /// </remarks>
+    [HttpGet("events/{eventId:guid}/report/pdf")]
+    [Produces("application/pdf", "application/json")]
+    [ProducesResponseType<FileContentResult>(StatusCodes.Status200OK, "application/pdf")]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetPdf(Guid eventId, CancellationToken ct)
+    {
+        var file = await reports.PdfLaporanEventAsync(eventId, ct);
+        return File(file.Isi, "application/pdf", file.NamaFile);
+    }
 
     /// <summary>Laporan event. 404 jika belum dibuat.</summary>
     [HttpGet("events/{eventId:guid}/report")]

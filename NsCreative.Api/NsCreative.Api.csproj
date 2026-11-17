@@ -13,7 +13,13 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="QuestPDF" Version="2026.9.2" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Logo di kop laporan PDF. -->
+    <EmbeddedResource Include="Pdf\logo.png" LogicalName="NsCreative.Api.Pdf.logo.png" />
   </ItemGroup>
 
   <ItemGroup>

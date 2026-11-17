@@ -8,7 +8,14 @@ public static class Waktu
     private static readonly TimeZoneInfo Wib = TimeZoneInfo.FindSystemTimeZoneById("Asia/Jakarta");
 
     /// <summary>Tanggal hari ini menurut WIB, dipakai untuk hitung mundur hari-H dan penanda terlambat.</summary>
-    public static DateOnly HariIni() => DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, Wib));
+    public static DateOnly HariIni() => DateOnly.FromDateTime(Sekarang());
+
+    /// <summary>Jam sekarang menurut WIB, misalnya untuk waktu cetak laporan.</summary>
+    public static DateTime Sekarang() => KeWib(DateTime.UtcNow);
+
+    /// <summary>Ubah waktu UTC dari kolom timestamptz ke WIB untuk ditampilkan.</summary>
+    public static DateTime KeWib(DateTime utc) =>
+        TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), Wib);
 
     /// <summary>
     /// Ubah ke UTC sebelum disimpan ke kolom timestamptz. Waktu tanpa zona, misalnya

@@ -5,6 +5,7 @@ using NsCreative.Api.Infrastruktur;
 using NsCreative.Api.Json;
 using NsCreative.Api.Middleware;
 using NsCreative.Api.ModelBinding;
+using NsCreative.Api.Pdf;
 using NsCreative.Api.Storage;
 using NsCreative.Core.Common;
 using NsCreative.Core.Entities;
@@ -99,6 +100,11 @@ builder.Services.AddScoped<IDocumentService, DocumentService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddSingleton<IPenyimpananFile, PenyimpananFileLokal>();
+
+// PDF laporan. Lisensi Community QuestPDF hanya sah untuk organisasi yang memenuhi syaratnya
+// (antara lain omzet < USD 1 juta/tahun dan bukan perusahaan terbuka). Lihat PRODUKSI.md.
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+builder.Services.AddSingleton<IPembuatPdfLaporan, PembuatPdfLaporan>();
 
 // --- API --------------------------------------------------------------------
 builder.Services
